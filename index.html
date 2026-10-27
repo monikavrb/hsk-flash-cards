@@ -1,22 +1,2949 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test</title>
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK 1–5 Flashcards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Noto+Sans:wght@500;600&family=Noto+Serif+SC:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow column. Level chips and options on top, a 田字格 practice card in the middle,
+   Again / Got it under the card, tone-colour key at the foot. */
+:root {
+  --bg: #ECF0ED;
+  --surface: #FAFCFA;
+  --ink: #15201C;
+  --ink-2: #53625D;
+  --line: #C7D1CC;
+  --accent: #1B6A5E;
+  --accent-ink: #FFFFFF;
+  --bad: #B03A2A;
+  --grid: #D4695A;
+  --grid-soft: #E3A79E;
+  --t1: #C0392B;
+  --t2: #B26A0A;
+  --t3: #1E7B4B;
+  --t4: #2A5DB5;
+  --t5: #6B7873;
+  --font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-py: 'Noto Sans', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-zh: 'Noto Serif SC', 'Songti SC', 'STSong', 'Source Han Serif SC', 'SimSun', serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1613; --surface: #18221E; --ink: #E7EFEB; --ink-2: #9CAAA4; --line: #2B3934;
+    --accent: #52BBA8; --accent-ink: #08120F; --bad: #FF8E7C; --grid: #B25A4E; --grid-soft: #5E3B36;
+    --t1: #FF7F70; --t2: #F2AB4A; --t3: #55CF90; --t4: #78A8FF; --t5: #9AA7A2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1613; --surface: #18221E; --ink: #E7EFEB; --ink-2: #9CAAA4; --line: #2B3934;
+  --accent: #52BBA8; --accent-ink: #08120F; --bad: #FF8E7C; --grid: #B25A4E; --grid-soft: #5E3B36;
+  --t1: #FF7F70; --t2: #F2AB4A; --t3: #55CF90; --t4: #78A8FF; --t5: #9AA7A2;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+/* Elements with the hidden attribute must stay hidden even when a class sets display. */
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
+
+/* level chips */
+.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.chip {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 10px 12px 11px; border-radius: 12px; cursor: pointer;
+  border: 1.5px solid var(--line); background: transparent; color: var(--ink-2);
+}
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--surface); color: var(--ink); }
+.chip b { font-size: 15px; font-weight: 700; }
+.chip small { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 4px; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+
+/* options */
+.opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button {
+  border: 0; background: transparent; color: var(--ink-2); font-weight: 600; font-size: 14px;
+  padding: 8px 12px; min-height: 40px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.sw { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; min-height: 40px; }
+.sw input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+
+/* stats */
+.stats { display: flex; flex-direction: column; gap: 6px; }
+.nums { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.nums b { color: var(--ink); font-weight: 700; }
+.stats .bar { margin: 0; height: 6px; border-radius: 3px; }
+
+/* card */
+.stage { position: relative; }
+.speak {
+  position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; border: 0; background: transparent; color: var(--ink-2);
+}
+.speak:hover { color: var(--accent); }
+.speak svg { width: 22px; height: 22px; }
+.card { perspective: 1200px; cursor: pointer; border-radius: 18px; -webkit-tap-highlight-color: transparent; }
+.card-inner { display: grid; min-height: 350px; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,.7,.2,1); }
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.card.snap .card-inner { transition: none; }
+.face {
+  grid-area: 1 / 1; position: relative; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px;
+  padding: 48px 20px 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; text-align: center; min-width: 0;
+}
+.back { transform: rotateY(180deg); }
+/* Some browsers ignore backface-visibility on text, so the hidden side showed through mirrored.
+   Also hide each face with visibility, switching at the midpoint of the flip. */
+.front, .back { transition: visibility 0s linear .22s; }
+.back { visibility: hidden; }
+.card.flipped .front { visibility: hidden; }
+.card.flipped .back { visibility: visible; }
+.card.snap .front, .card.snap .back { transition: none; }
+.cell, .cell .g, .face * { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.tag { position: absolute; top: 16px; left: 18px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.hint { position: absolute; bottom: 14px; left: 0; right: 0; font-size: 12px; color: var(--ink-2); }
+
+/* 田字格 cells */
+.cells { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+.cell {
+  position: relative; width: var(--cell, 112px); aspect-ratio: 1; display: grid; place-items: center;
+  border: 1.5px solid var(--grid); background: var(--surface);
+  font-family: var(--font-zh); font-weight: 500; font-size: calc(var(--cell, 112px) * 0.66); line-height: 1; color: var(--ink);
+}
+.cell::before, .cell::after { content: ""; position: absolute; pointer-events: none; }
+.cell::before { left: 0; right: 0; top: 50%; border-top: 1.5px dashed var(--grid-soft); }
+.cell::after { top: 0; bottom: 0; left: 50%; border-left: 1.5px dashed var(--grid-soft); }
+.cell .g { position: relative; z-index: 1; }
+.sep { font-family: var(--font-zh); font-size: 20px; color: var(--ink-2); }
+
+.zh-sm { font-family: var(--font-zh); font-size: 30px; font-weight: 500; line-height: 1.2; }
+.py { font-family: var(--font-py); font-weight: 600; font-size: 30px; line-height: 1.2; overflow-wrap: anywhere; }
+.mean { font-size: 22px; font-weight: 600; line-height: 1.3; text-wrap: balance; overflow-wrap: anywhere; }
+.mean.big { font-size: 30px; line-height: 1.2; }
+.t1 { color: var(--t1); } .t2 { color: var(--t2); } .t3 { color: var(--t3); } .t4 { color: var(--t4); } .t5 { color: var(--t5); }
+
+/* answer buttons */
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn {
+  min-height: 54px; border-radius: 14px; border: 1.5px solid var(--line); background: transparent;
+  font-weight: 700; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn kbd { font: 600 11px var(--font-ui); opacity: .7; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; }
+.btn.again { border-color: var(--bad); color: var(--bad); }
+.btn.got { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.btn.solid { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); padding: 0 18px; }
+
+/* finished panel */
+.done {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; min-height: 350px;
+  padding: 28px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;
+}
+.done h2 { margin: 0; font-size: 24px; line-height: 1.2; text-wrap: balance; }
+.done p { margin: 0; color: var(--ink-2); max-width: 36ch; text-wrap: pretty; }
+.done .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+
+/* footer */
+.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; color: var(--ink-2); font-size: 13px; }
+.tones { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tones span.k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.tones .s { font-family: var(--font-py); font-weight: 600; font-size: 18px; }
+.link { background: none; border: 0; padding: 8px 0; cursor: pointer; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+.keys { font-size: 12px; color: var(--ink-2); }
+@media (pointer: coarse) { .keys { display: none; } }
+@media (prefers-reduced-motion: reduce) { .card-inner, .bar > i { transition: none; } }
+@media (max-width: 380px) { .py { font-size: 26px; } .mean.big { font-size: 26px; } }
+</style>
 </head>
 <body>
-  <div id="app">Loading...</div>
-  <script>
-    window.$docsify = {
-      name: 'Test',
-      loadSidebar: true,
-      subMaxLevel: 2,
-      search: 'auto'
-    };
-  </script>
-  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
-  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+<div class="app">
+  <header>
+    <h1>HSK 1–5 Flashcards</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <section class="levels" id="levels" aria-label="Levels to practice"></section>
+
+  <section class="opts">
+    <div class="seg" role="group" aria-label="Card direction">
+      <button type="button" id="dirZh" aria-pressed="true">汉字 → English</button>
+      <button type="button" id="dirEn" aria-pressed="false">English → 汉字</button>
+    </div>
+    <label class="sw" for="skip"><input type="checkbox" id="skip"> Skip known</label>
+    <label class="sw" for="shuf"><input type="checkbox" id="shuf"> Shuffle</label>
+  </section>
+
+  <section class="stats" aria-live="polite">
+    <div class="nums">
+      <span>Left <b id="nLeft">0</b></span>
+      <span>Got it <b id="nGot">0</b></span>
+      <span>Again <b id="nAgain">0</b></span>
+    </div>
+    <div class="bar"><i id="prog"></i></div>
+  </section>
+
+  <section id="practice">
+    <div class="stage" id="stage">
+      <button type="button" class="speak" id="speak" aria-label="Play pronunciation" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
+      </button>
+      <div class="card" id="card" role="button" tabindex="0" aria-label="Flip card">
+        <div class="card-inner">
+          <div class="face front" id="front"></div>
+          <div class="face back" id="back"></div>
+        </div>
+      </div>
+    </div>
+    <div class="done" id="done" hidden></div>
+    <div class="actions" id="actions" style="margin-top:12px">
+      <button type="button" class="btn again" id="again">Again <kbd>1</kbd></button>
+      <button type="button" class="btn got" id="got">Got it <kbd>2</kbd></button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="tones" aria-label="Tone colour key">
+      <span class="k">Tones</span>
+      <span class="s t1">mā</span><span class="s t2">má</span><span class="s t3">mǎ</span><span class="s t4">mà</span><span class="s t5">ma</span>
+    </div>
+    <span class="keys">Space flips · 1 again · 2 got it</span>
+    <button type="button" class="link" id="reset">Reset progress</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // hanzi | pinyin | meaning  (HSK 2.0 word lists, levels 1-5)
+  var RAW = {
+    1: `爱|ài|to love
+八|bā|eight
+爸爸|bàba|dad
+杯子|bēizi|cup, glass
+北京|Běijīng|Beijing
+本|běn|measure word for books
+不客气|bú kèqi|you're welcome
+不|bù|not, no
+菜|cài|dish; vegetable
+茶|chá|tea
+吃|chī|to eat
+出租车|chūzūchē|taxi
+打电话|dǎ diànhuà|to make a phone call
+大|dà|big
+的|de|possessive particle
+点|diǎn|o'clock; a little; dot
+电脑|diànnǎo|computer
+电视|diànshì|television
+电影|diànyǐng|movie
+东西|dōngxi|thing, stuff
+都|dōu|all, both
+读|dú|to read aloud; to study
+对不起|duìbuqǐ|sorry
+多|duō|many, much
+多少|duōshao|how many, how much
+儿子|érzi|son
+二|èr|two
+饭馆|fànguǎn|restaurant
+飞机|fēijī|airplane
+分钟|fēnzhōng|minute
+高兴|gāoxìng|happy, glad
+个|gè|general measure word
+工作|gōngzuò|work; job
+狗|gǒu|dog
+汉语|Hànyǔ|Chinese language
+好|hǎo|good, well
+喝|hē|to drink
+和|hé|and
+很|hěn|very
+后面|hòumian|behind, back
+回|huí|to return
+会|huì|can (learned skill); will
+几|jǐ|how many (small number)
+家|jiā|home; family
+叫|jiào|to be called
+今天|jīntiān|today
+九|jiǔ|nine
+开|kāi|to open; to drive
+看|kàn|to look, watch, read
+看见|kànjiàn|to see
+块|kuài|yuan; piece
+来|lái|to come
+老师|lǎoshī|teacher
+了|le|completed-action particle
+冷|lěng|cold
+里|lǐ|inside
+六|liù|six
+妈妈|māma|mom
+吗|ma|question particle
+买|mǎi|to buy
+没关系|méi guānxi|it doesn't matter
+没有|méiyǒu|not have; there isn't
+米饭|mǐfàn|cooked rice
+名字|míngzi|name
+明天|míngtiān|tomorrow
+哪|nǎ|which
+哪儿|nǎr|where
+那|nà|that
+呢|ne|particle for follow-up questions
+能|néng|can, be able to
+你|nǐ|you
+年|nián|year
+女儿|nǚ'ér|daughter
+朋友|péngyou|friend
+漂亮|piàoliang|pretty
+苹果|píngguǒ|apple
+七|qī|seven
+前面|qiánmian|front, ahead
+钱|qián|money
+请|qǐng|please; to invite
+去|qù|to go
+热|rè|hot
+人|rén|person
+认识|rènshi|to know (a person)
+三|sān|three
+商店|shāngdiàn|shop, store
+上|shàng|up; on; previous
+上午|shàngwǔ|morning
+少|shǎo|few, less
+谁|shéi|who
+什么|shénme|what
+十|shí|ten
+时候|shíhou|time, moment
+是|shì|to be
+书|shū|book
+水|shuǐ|water
+水果|shuǐguǒ|fruit
+睡觉|shuìjiào|to sleep
+说|shuō|to speak, say
+四|sì|four
+岁|suì|years old
+他|tā|he, him
+她|tā|she, her
+太|tài|too; extremely
+天气|tiānqì|weather
+听|tīng|to listen
+同学|tóngxué|classmate
+喂|wèi|hello (on the phone)
+我|wǒ|I, me
+我们|wǒmen|we, us
+五|wǔ|five
+喜欢|xǐhuan|to like
+下|xià|down; next
+下午|xiàwǔ|afternoon
+下雨|xiàyǔ|to rain
+先生|xiānsheng|Mr.; sir
+现在|xiànzài|now
+想|xiǎng|to want; to think
+小|xiǎo|small
+小姐|xiǎojiě|Miss; young lady
+些|xiē|some
+写|xiě|to write
+谢谢|xièxie|thank you
+星期|xīngqī|week
+学生|xuésheng|student
+学习|xuéxí|to study
+学校|xuéxiào|school
+一|yī|one
+一点儿|yìdiǎnr|a little
+衣服|yīfu|clothes
+医生|yīshēng|doctor
+医院|yīyuàn|hospital
+椅子|yǐzi|chair
+有|yǒu|to have; there is
+月|yuè|month; moon
+再见|zàijiàn|goodbye
+在|zài|at, in; be present
+怎么|zěnme|how
+怎么样|zěnmeyàng|how about, how is it
+这|zhè|this
+中国|Zhōngguó|China
+中午|zhōngwǔ|noon
+住|zhù|to live, stay
+桌子|zhuōzi|table
+字|zì|character, word
+昨天|zuótiān|yesterday
+坐|zuò|to sit
+做|zuò|to do, make`,
+
+    2: `吧|ba|suggestion particle
+白|bái|white
+百|bǎi|hundred
+帮助|bāngzhù|to help
+报纸|bàozhǐ|newspaper
+比|bǐ|to compare; than
+别|bié|don't
+长|cháng|long
+唱歌|chànggē|to sing
+出|chū|to go out
+穿|chuān|to wear
+次|cì|time (occurrence)
+从|cóng|from
+错|cuò|wrong
+打篮球|dǎ lánqiú|to play basketball
+大家|dàjiā|everyone
+到|dào|to arrive
+得|de|complement particle
+等|děng|to wait
+弟弟|dìdi|younger brother
+第一|dì-yī|first
+懂|dǒng|to understand
+对|duì|correct; towards
+房间|fángjiān|room
+非常|fēicháng|very, extremely
+服务员|fúwùyuán|waiter, attendant
+高|gāo|tall; high
+告诉|gàosu|to tell
+哥哥|gēge|older brother
+给|gěi|to give; for
+公共汽车|gōnggòng qìchē|bus
+公司|gōngsī|company
+贵|guì|expensive
+过|guo|experienced-action particle
+还|hái|still; also
+孩子|háizi|child
+好吃|hǎochī|delicious
+黑|hēi|black
+红|hóng|red
+火车站|huǒchēzhàn|train station
+机场|jīchǎng|airport
+鸡蛋|jīdàn|egg
+件|jiàn|measure word for clothes, matters
+教室|jiàoshì|classroom
+姐姐|jiějie|older sister
+介绍|jièshào|to introduce
+进|jìn|to enter
+近|jìn|near
+就|jiù|then; just
+觉得|juéde|to feel, think
+咖啡|kāfēi|coffee
+开始|kāishǐ|to begin
+考试|kǎoshì|exam
+可能|kěnéng|maybe; possible
+可以|kěyǐ|can, may
+课|kè|class, lesson
+快|kuài|fast
+快乐|kuàilè|happy
+累|lèi|tired
+离|lí|away from
+两|liǎng|two (of something)
+零|líng|zero
+路|lù|road
+旅游|lǚyóu|to travel
+卖|mài|to sell
+慢|màn|slow
+忙|máng|busy
+每|měi|every
+妹妹|mèimei|younger sister
+门|mén|door
+面条|miàntiáo|noodles
+男|nán|male
+您|nín|you (polite)
+牛奶|niúnǎi|milk
+女|nǚ|female
+旁边|pángbiān|beside
+跑步|pǎobù|to run, jog
+便宜|piányi|cheap
+票|piào|ticket
+妻子|qīzi|wife
+起床|qǐchuáng|to get up
+千|qiān|thousand
+铅笔|qiānbǐ|pencil
+晴|qíng|sunny
+去年|qùnián|last year
+让|ràng|to let; to make
+日|rì|day; sun
+上班|shàngbān|to go to work
+身体|shēntǐ|body; health
+生病|shēngbìng|to get sick
+生日|shēngrì|birthday
+时间|shíjiān|time
+事情|shìqing|matter, affair
+手表|shǒubiǎo|wristwatch
+手机|shǒujī|cell phone
+说话|shuōhuà|to talk
+送|sòng|to give (a gift); to send
+虽然...但是|suīrán...dànshì|although... but...
+它|tā|it
+踢足球|tī zúqiú|to play soccer
+题|tí|question, problem
+跳舞|tiàowǔ|to dance
+外|wài|outside
+完|wán|to finish
+玩|wán|to play
+晚上|wǎnshang|evening
+往|wǎng|toward
+为什么|wèishénme|why
+问|wèn|to ask
+问题|wèntí|question; problem
+西瓜|xīguā|watermelon
+希望|xīwàng|to hope
+洗|xǐ|to wash
+小时|xiǎoshí|hour
+笑|xiào|to laugh, smile
+新|xīn|new
+姓|xìng|surname
+休息|xiūxi|to rest
+雪|xuě|snow
+颜色|yánsè|color
+眼睛|yǎnjing|eye
+羊肉|yángròu|lamb, mutton
+药|yào|medicine
+要|yào|to want; to need; will
+也|yě|also
+一起|yìqǐ|together
+一下|yíxià|a bit; one time
+已经|yǐjīng|already
+意思|yìsi|meaning
+因为...所以|yīnwèi...suǒyǐ|because... therefore...
+阴|yīn|cloudy
+游泳|yóuyǒng|to swim
+右边|yòubian|right side
+鱼|yú|fish
+远|yuǎn|far
+运动|yùndòng|exercise; sport
+再|zài|again
+早上|zǎoshang|morning
+丈夫|zhàngfu|husband
+找|zhǎo|to look for
+着|zhe|ongoing-state particle
+真|zhēn|really
+正在|zhèngzài|in the middle of (doing)
+知道|zhīdào|to know
+准备|zhǔnbèi|to prepare
+走|zǒu|to walk; to leave
+最|zuì|most
+左边|zuǒbian|left side`,
+
+    3: `阿姨|āyí|aunt; auntie
+啊|a|particle of surprise or emphasis
+矮|ǎi|short (height)
+爱好|àihào|hobby
+安静|ānjìng|quiet
+把|bǎ|marker for object before verb
+班|bān|class, team
+搬|bān|to move, carry
+半|bàn|half
+办法|bànfǎ|method, way
+办公室|bàngōngshì|office
+帮忙|bāngmáng|to help out
+包|bāo|bag; to wrap
+饱|bǎo|full (from eating)
+北方|běifāng|north
+被|bèi|by (passive marker)
+鼻子|bízi|nose
+比较|bǐjiào|relatively; to compare
+比赛|bǐsài|match, competition
+笔记本|bǐjìběn|notebook
+必须|bìxū|must
+变化|biànhuà|change
+别人|biérén|other people
+冰箱|bīngxiāng|refrigerator
+不但...而且|búdàn...érqiě|not only... but also...
+才|cái|only then; not until
+菜单|càidān|menu
+参加|cānjiā|to take part in
+草|cǎo|grass
+层|céng|floor; layer
+差|chà|lacking; bad
+超市|chāoshì|supermarket
+衬衫|chènshān|shirt
+成绩|chéngjì|grades; result
+城市|chéngshì|city
+迟到|chídào|to be late
+除了|chúle|besides; except
+船|chuán|boat
+春|chūn|spring
+词典|cídiǎn|dictionary
+聪明|cōngming|smart
+打扫|dǎsǎo|to clean
+打算|dǎsuàn|to plan
+带|dài|to bring, carry
+担心|dānxīn|to worry
+蛋糕|dàngāo|cake
+当然|dāngrán|of course
+地|de|adverb marker
+灯|dēng|lamp, light
+地方|dìfang|place
+地铁|dìtiě|subway
+地图|dìtú|map
+电梯|diàntī|elevator
+电子邮件|diànzǐ yóujiàn|email
+东|dōng|east
+冬|dōng|winter
+动物|dòngwù|animal
+短|duǎn|short (length)
+段|duàn|section, paragraph
+锻炼|duànliàn|to exercise
+多么|duōme|how (much)
+饿|è|hungry
+耳朵|ěrduo|ear
+发|fā|to send; to issue
+发烧|fāshāo|to have a fever
+发现|fāxiàn|to discover
+方便|fāngbiàn|convenient
+放|fàng|to put; to release
+放心|fàngxīn|to rest assured
+分|fēn|minute; cent; to divide
+附近|fùjìn|nearby
+复习|fùxí|to review
+干净|gānjìng|clean
+感冒|gǎnmào|common cold
+刚才|gāngcái|just now
+根据|gēnjù|according to
+跟|gēn|with; to follow
+更|gèng|even more
+公斤|gōngjīn|kilogram
+公园|gōngyuán|park
+故事|gùshi|story
+刮风|guāfēng|to be windy
+关|guān|to close
+关系|guānxi|relationship
+关心|guānxīn|to care about
+关于|guānyú|about, regarding
+国家|guójiā|country
+过|guò|to pass; to spend (time)
+过去|guòqù|past; to go over
+还是|háishi|or; still
+害怕|hàipà|to be afraid
+黑板|hēibǎn|blackboard
+后来|hòulái|later
+护照|hùzhào|passport
+花|huā|flower; to spend
+画|huà|to draw; painting
+坏|huài|bad; broken
+欢迎|huānyíng|to welcome
+还|huán|to return (something)
+环境|huánjìng|environment
+换|huàn|to change, exchange
+黄河|Huáng Hé|Yellow River
+回答|huídá|to answer
+会议|huìyì|meeting
+或者|huòzhě|or (in statements)
+几乎|jīhū|almost
+机会|jīhuì|opportunity
+极|jí|extremely
+记得|jìde|to remember
+季节|jìjié|season
+检查|jiǎnchá|to check
+简单|jiǎndān|simple
+健康|jiànkāng|healthy
+见面|jiànmiàn|to meet
+讲|jiǎng|to speak, tell
+教|jiāo|to teach
+角|jiǎo|corner; horn; 10 cents
+脚|jiǎo|foot
+接|jiē|to receive; to pick up
+街道|jiēdào|street
+节目|jiémù|program, show
+节日|jiérì|holiday, festival
+结婚|jiéhūn|to marry
+结束|jiéshù|to end
+解决|jiějué|to solve
+借|jiè|to borrow; to lend
+经常|jīngcháng|often
+经过|jīngguò|to pass through
+经理|jīnglǐ|manager
+久|jiǔ|for a long time
+旧|jiù|old (things)
+句子|jùzi|sentence
+决定|juédìng|to decide
+可爱|kě'ài|cute
+渴|kě|thirsty
+刻|kè|quarter of an hour
+客人|kèrén|guest
+空调|kōngtiáo|air conditioner
+口|kǒu|mouth
+哭|kū|to cry
+裤子|kùzi|pants
+筷子|kuàizi|chopsticks
+蓝|lán|blue
+老|lǎo|old (people)
+离开|líkāi|to leave
+礼物|lǐwù|gift
+历史|lìshǐ|history
+脸|liǎn|face
+练习|liànxí|to practice
+辆|liàng|measure word for vehicles
+聊天|liáotiān|to chat
+了解|liǎojiě|to understand; to find out
+邻居|línjū|neighbor
+留学|liúxué|to study abroad
+楼|lóu|building; floor
+绿|lǜ|green
+马|mǎ|horse
+马上|mǎshàng|immediately
+满意|mǎnyì|satisfied
+帽子|màozi|hat
+米|mǐ|meter; rice
+面包|miànbāo|bread
+明白|míngbái|to understand; clear
+拿|ná|to take, hold
+奶奶|nǎinai|grandmother (paternal)
+南|nán|south
+难|nán|difficult
+难过|nánguò|sad
+年级|niánjí|grade, year (in school)
+年轻|niánqīng|young
+鸟|niǎo|bird
+努力|nǔlì|hard-working; to try hard
+爬山|páshān|to climb a mountain
+盘子|pánzi|plate
+胖|pàng|fat
+皮鞋|píxié|leather shoes
+啤酒|píjiǔ|beer
+瓶子|píngzi|bottle
+其实|qíshí|actually
+其他|qítā|other
+奇怪|qíguài|strange
+骑|qí|to ride
+起飞|qǐfēi|to take off
+清楚|qīngchu|clear
+请假|qǐngjià|to ask for leave
+秋|qiū|autumn
+裙子|qúnzi|skirt
+然后|ránhòu|then, afterwards
+热情|rèqíng|warm, enthusiastic
+认为|rènwéi|to think, consider
+认真|rènzhēn|serious; conscientious
+容易|róngyì|easy
+如果|rúguǒ|if
+伞|sǎn|umbrella
+上网|shàngwǎng|to go online
+生气|shēngqì|to be angry
+声音|shēngyīn|sound, voice
+世界|shìjiè|world
+试|shì|to try
+瘦|shòu|thin
+叔叔|shūshu|uncle
+舒服|shūfu|comfortable
+树|shù|tree
+数学|shùxué|math
+刷牙|shuāyá|to brush teeth
+双|shuāng|pair
+水平|shuǐpíng|level, standard
+司机|sījī|driver
+太阳|tàiyáng|sun
+特别|tèbié|especially
+疼|téng|painful
+提高|tígāo|to improve
+体育|tǐyù|physical education; sports
+甜|tián|sweet
+条|tiáo|measure word for long things
+同事|tóngshì|colleague
+同意|tóngyì|to agree
+头发|tóufa|hair
+突然|tūrán|suddenly
+图书馆|túshūguǎn|library
+腿|tuǐ|leg
+完成|wánchéng|to complete
+碗|wǎn|bowl
+万|wàn|ten thousand
+忘记|wàngjì|to forget
+为|wèi|for; to
+为了|wèile|in order to
+位|wèi|polite measure word for people
+文化|wénhuà|culture
+西|xī|west
+习惯|xíguàn|habit; to be used to
+洗手间|xǐshǒujiān|restroom
+洗澡|xǐzǎo|to take a bath or shower
+夏|xià|summer
+先|xiān|first; earlier
+相信|xiāngxìn|to believe
+香蕉|xiāngjiāo|banana
+向|xiàng|toward
+像|xiàng|to resemble; like
+小心|xiǎoxīn|to be careful
+校长|xiàozhǎng|principal
+新闻|xīnwén|news
+新鲜|xīnxiān|fresh
+信|xìn|letter
+行李箱|xínglǐxiāng|suitcase
+熊猫|xióngmāo|panda
+需要|xūyào|to need
+选择|xuǎnzé|to choose
+要求|yāoqiú|to require; request
+爷爷|yéye|grandfather (paternal)
+一般|yìbān|usually; ordinary
+一边|yìbiān|at the same time
+一定|yídìng|definitely
+一共|yígòng|altogether
+一会儿|yíhuìr|a little while
+一样|yíyàng|the same
+一直|yìzhí|continuously
+以前|yǐqián|before, previously
+以为|yǐwéi|to assume (wrongly)
+一些|yìxiē|some
+音乐|yīnyuè|music
+银行|yínháng|bank
+饮料|yǐnliào|drink, beverage
+应该|yīnggāi|should
+影响|yǐngxiǎng|influence
+用|yòng|to use
+游戏|yóuxì|game
+有名|yǒumíng|famous
+又|yòu|again (past); also
+遇到|yùdào|to run into
+元|yuán|yuan
+愿意|yuànyì|to be willing
+月亮|yuèliang|moon
+越|yuè|more and more
+站|zhàn|to stand; station
+张|zhāng|measure word for flat things
+长|zhǎng|to grow; to look (a certain way)
+着急|zháojí|anxious
+照顾|zhàogù|to take care of
+照片|zhàopiàn|photo
+照相机|zhàoxiàngjī|camera
+只|zhī|measure word for animals
+只|zhǐ|only
+最近|zuìjìn|recently
+中间|zhōngjiān|middle
+中文|Zhōngwén|Chinese (written/spoken)
+终于|zhōngyú|finally
+种|zhǒng|kind, type
+重要|zhòngyào|important
+周末|zhōumò|weekend
+主要|zhǔyào|main
+注意|zhùyì|to pay attention
+自己|zìjǐ|oneself
+自行车|zìxíngchē|bicycle
+总是|zǒngshì|always
+嘴|zuǐ|mouth
+作业|zuòyè|homework`,
+
+    4: `爱情|àiqíng|love (romantic)
+安排|ānpái|to arrange
+安全|ānquán|safe; safety
+按时|ànshí|on time
+按照|ànzhào|according to
+百分之|bǎifēnzhī|percent
+棒|bàng|great, excellent
+包子|bāozi|steamed stuffed bun
+保护|bǎohù|to protect
+保证|bǎozhèng|to guarantee
+报名|bàomíng|to sign up
+抱|bào|to hug
+抱歉|bàoqiàn|sorry
+倍|bèi|times, -fold
+本来|běnlái|originally
+笨|bèn|stupid, clumsy
+比如|bǐrú|for example
+毕业|bìyè|to graduate
+遍|biàn|time (a complete occurrence)
+标准|biāozhǔn|standard
+表格|biǎogé|form, table
+表示|biǎoshì|to express
+表演|biǎoyǎn|to perform
+表扬|biǎoyáng|to praise
+饼干|bǐnggān|biscuit, cookie
+并且|bìngqiě|and; moreover
+博士|bóshì|doctor (PhD)
+不过|búguò|but, however
+不得不|bùdébù|have to
+不管|bùguǎn|no matter
+不仅|bùjǐn|not only
+部分|bùfen|part
+擦|cā|to wipe
+猜|cāi|to guess
+材料|cáiliào|material
+参观|cānguān|to visit (a place)
+餐厅|cāntīng|dining hall; restaurant
+厕所|cèsuǒ|toilet
+差不多|chàbuduō|almost; about the same
+尝|cháng|to taste
+长城|Chángchéng|the Great Wall
+长江|Cháng Jiāng|Yangtze River
+场|chǎng|measure word for events
+吵|chǎo|noisy
+吵架|chǎojià|to quarrel
+超过|chāoguò|to exceed
+成功|chénggōng|success
+成为|chéngwéi|to become
+诚实|chéngshí|honest
+乘坐|chéngzuò|to ride (a vehicle)
+吃惊|chījīng|to be surprised
+重新|chóngxīn|again, anew
+抽烟|chōuyān|to smoke
+出差|chūchāi|business trip
+出发|chūfā|to set off
+出生|chūshēng|to be born
+出现|chūxiàn|to appear
+厨房|chúfáng|kitchen
+传真|chuánzhēn|fax
+窗户|chuānghu|window
+词语|cíyǔ|word, term
+从来|cónglái|always, ever
+粗心|cūxīn|careless
+存|cún|to save; to store
+达到|dádào|to reach
+打扮|dǎban|to dress up
+打印|dǎyìn|to print
+打招呼|dǎ zhāohu|to greet
+打折|dǎzhé|to give a discount
+打针|dǎzhēn|to get an injection
+大概|dàgài|probably; roughly
+大使馆|dàshǐguǎn|embassy
+大约|dàyuē|about, approximately
+大夫|dàifu|doctor
+戴|dài|to wear (accessories)
+当|dāng|to serve as; when
+当时|dāngshí|at that time
+刀|dāo|knife
+导游|dǎoyóu|tour guide
+到处|dàochù|everywhere
+到底|dàodǐ|after all; at last
+倒|dào|to pour; upside down
+道理|dàolǐ|reason, sense
+道歉|dàoqiàn|to apologize
+得意|déyì|proud of oneself
+得|děi|must, have to
+登机牌|dēngjīpái|boarding pass
+低|dī|low
+底|dǐ|bottom
+地点|dìdiǎn|location
+地球|dìqiú|the Earth
+地址|dìzhǐ|address
+调查|diàochá|to investigate
+掉|diào|to fall; to lose
+丢|diū|to lose
+动作|dòngzuò|movement
+堵车|dǔchē|traffic jam
+肚子|dùzi|belly
+断|duàn|to break
+对方|duìfāng|the other party
+对话|duìhuà|dialogue
+对面|duìmiàn|opposite
+对于|duìyú|regarding
+儿童|értóng|child
+而|ér|and; but
+发票|fāpiào|receipt, invoice
+发生|fāshēng|to happen
+发展|fāzhǎn|to develop
+法律|fǎlǜ|law
+翻译|fānyì|to translate
+烦恼|fánnǎo|worried; vexation
+反对|fǎnduì|to oppose
+方法|fāngfǎ|method
+方面|fāngmiàn|aspect
+方向|fāngxiàng|direction
+房东|fángdōng|landlord
+放弃|fàngqì|to give up
+放暑假|fàng shǔjià|to have summer vacation
+放松|fàngsōng|to relax
+份|fèn|portion; measure word for jobs, copies
+丰富|fēngfù|rich, abundant
+分手|fēnshǒu|to break up
+否则|fǒuzé|otherwise
+符合|fúhé|to conform to
+富|fù|rich
+父亲|fùqin|father
+付款|fùkuǎn|to pay
+负责|fùzé|to be responsible for
+复印|fùyìn|to photocopy
+复杂|fùzá|complicated
+改变|gǎibiàn|to change
+干杯|gānbēi|cheers; to drink a toast
+赶|gǎn|to rush; to catch up
+敢|gǎn|to dare
+感动|gǎndòng|to be moved
+感觉|gǎnjué|to feel; feeling
+感情|gǎnqíng|emotion; feelings
+感谢|gǎnxiè|to thank
+干|gàn|to do
+刚|gāng|just, only just
+高速公路|gāosù gōnglù|highway
+胳膊|gēbo|arm
+各|gè|each
+公共|gōnggòng|public
+公里|gōnglǐ|kilometer
+工资|gōngzī|salary
+共同|gòngtóng|common; together
+购物|gòuwù|shopping
+够|gòu|enough
+估计|gūjì|to estimate
+鼓励|gǔlì|to encourage
+鼓掌|gǔzhǎng|to applaud
+故意|gùyì|deliberately
+顾客|gùkè|customer
+挂|guà|to hang
+关机|guānjī|to turn off (a device)
+关键|guānjiàn|key; crucial
+观众|guānzhòng|audience
+管理|guǎnlǐ|to manage
+光|guāng|light; only
+广播|guǎngbō|broadcast
+广告|guǎnggào|advertisement
+逛|guàng|to stroll
+规定|guīdìng|regulation
+国籍|guójí|nationality
+国际|guójì|international
+果汁|guǒzhī|fruit juice
+过程|guòchéng|process
+过期|guòqī|expired
+海洋|hǎiyáng|ocean
+海鲜|hǎixiān|seafood
+害羞|hàixiū|shy
+寒假|hánjià|winter vacation
+汗|hàn|sweat
+航班|hángbān|flight
+好处|hǎochù|benefit
+好几|hǎojǐ|quite a few
+好像|hǎoxiàng|seem like
+号码|hàomǎ|number
+合格|hégé|qualified
+合适|héshì|suitable
+盒子|hézi|box
+后悔|hòuhuǐ|to regret
+厚|hòu|thick
+互联网|hùliánwǎng|the Internet
+互相|hùxiāng|each other
+护士|hùshi|nurse
+怀疑|huáiyí|to doubt
+回忆|huíyì|to recall
+活动|huódòng|activity
+活泼|huópō|lively
+火|huǒ|fire
+获得|huòdé|to obtain
+积极|jījí|positive; active
+积累|jīlěi|to accumulate
+基础|jīchǔ|foundation
+激动|jīdòng|excited
+及时|jíshí|in time
+即使|jíshǐ|even if
+计划|jìhuà|plan
+记者|jìzhě|reporter
+技术|jìshù|technology
+既然|jìrán|since
+继续|jìxù|to continue
+寄|jì|to mail
+加班|jiābān|to work overtime
+加油站|jiāyóuzhàn|gas station
+家具|jiājù|furniture
+假|jiǎ|fake
+价格|jiàgé|price
+坚持|jiānchí|to persist
+简历|jiǎnlì|resume, CV
+减肥|jiǎnféi|to lose weight
+减少|jiǎnshǎo|to reduce
+建议|jiànyì|to suggest
+将来|jiānglái|future
+奖金|jiǎngjīn|bonus
+降低|jiàngdī|to lower
+降落|jiàngluò|to land
+交|jiāo|to hand in
+交流|jiāoliú|to exchange
+交通|jiāotōng|traffic
+郊区|jiāoqū|suburb
+骄傲|jiāo'ào|proud; arrogant
+饺子|jiǎozi|dumplings
+教授|jiàoshòu|professor
+教育|jiàoyù|education
+接受|jiēshòu|to accept
+接着|jiēzhe|to follow; next
+节约|jiéyuē|to save
+结果|jiéguǒ|result
+解释|jiěshì|to explain
+尽管|jǐnguǎn|although
+紧张|jǐnzhāng|nervous
+进行|jìnxíng|to carry out
+禁止|jìnzhǐ|to prohibit
+京剧|jīngjù|Peking opera
+经济|jīngjì|economy
+经历|jīnglì|experience
+经验|jīngyàn|experience (skills)
+精彩|jīngcǎi|wonderful
+景色|jǐngsè|scenery
+警察|jǐngchá|police
+竞争|jìngzhēng|to compete
+竟然|jìngrán|unexpectedly
+镜子|jìngzi|mirror
+究竟|jiūjìng|actually
+举行|jǔxíng|to hold (an event)
+拒绝|jùjué|to refuse
+距离|jùlí|distance
+聚会|jùhuì|party; gathering
+开玩笑|kāi wánxiào|to joke
+开心|kāixīn|happy
+看法|kànfǎ|opinion
+考虑|kǎolǜ|to consider
+烤鸭|kǎoyā|roast duck
+靠|kào|to lean on; to rely on
+科学|kēxué|science
+棵|kē|measure word for trees
+咳嗽|késou|to cough
+可怜|kělián|pitiful
+可是|kěshì|but
+可惜|kěxī|unfortunately
+客厅|kètīng|living room
+肯定|kěndìng|definitely
+空|kōng|empty
+空气|kōngqì|air
+恐怕|kǒngpà|I'm afraid
+苦|kǔ|bitter
+夸|kuā|to praise
+矿泉水|kuàngquánshuǐ|mineral water
+困|kùn|sleepy
+困难|kùnnan|difficulty
+拉|lā|to pull
+辣|là|spicy
+来不及|láibují|too late
+来得及|láidejí|still have time
+懒|lǎn|lazy
+浪漫|làngmàn|romantic
+老虎|lǎohǔ|tiger
+冷静|lěngjìng|calm
+礼拜天|lǐbàitiān|Sunday
+礼貌|lǐmào|polite; manners
+理发|lǐfà|to get a haircut
+理解|lǐjiě|to understand
+理想|lǐxiǎng|ideal
+力气|lìqi|strength
+厉害|lìhai|awesome; fierce
+例如|lìrú|for example
+俩|liǎ|the two of
+连|lián|even; to link
+联系|liánxì|to contact
+凉快|liángkuai|cool
+零钱|língqián|small change
+另外|lìngwài|in addition
+留|liú|to leave; to stay
+流利|liúlì|fluent
+流行|liúxíng|popular
+旅行|lǚxíng|to travel
+律师|lǜshī|lawyer
+乱|luàn|messy
+麻烦|máfan|troublesome
+马虎|mǎhu|careless
+满|mǎn|full
+毛|máo|10 cents; hair
+毛巾|máojīn|towel
+美丽|měilì|beautiful
+梦|mèng|dream
+迷路|mílù|to get lost
+密码|mìmǎ|password
+免费|miǎnfèi|free of charge
+秒|miǎo|second
+民族|mínzú|ethnic group
+母亲|mǔqin|mother
+目的|mùdì|purpose
+耐心|nàixīn|patience
+难道|nándào|could it be that
+难受|nánshòu|uncomfortable
+内|nèi|inside
+内容|nèiróng|content
+能力|nénglì|ability
+年龄|niánlíng|age
+弄|nòng|to do; to handle
+暖和|nuǎnhuo|warm
+偶尔|ǒu'ěr|occasionally
+排队|páiduì|to line up
+排列|páiliè|to arrange in order
+判断|pànduàn|to judge
+陪|péi|to accompany
+批评|pīpíng|to criticize
+皮肤|pífū|skin
+脾气|píqi|temper
+篇|piān|measure word for articles
+骗|piàn|to deceive
+乒乓球|pīngpāngqiú|table tennis
+平时|píngshí|usually
+破|pò|broken
+葡萄|pútao|grape
+普遍|pǔbiàn|universal
+普通话|pǔtōnghuà|Mandarin
+其次|qícì|next; secondly
+其中|qízhōng|among them
+气候|qìhòu|climate
+千万|qiānwàn|must; be sure to
+签证|qiānzhèng|visa
+敲|qiāo|to knock
+桥|qiáo|bridge
+巧克力|qiǎokèlì|chocolate
+亲戚|qīnqi|relative
+轻|qīng|light (weight)
+轻松|qīngsōng|relaxed
+情况|qíngkuàng|situation
+请客|qǐngkè|to treat (someone)
+穷|qióng|poor
+区别|qūbié|difference
+取|qǔ|to take; to withdraw
+取消|qǔxiāo|to cancel
+全部|quánbù|all
+缺点|quēdiǎn|shortcoming
+缺少|quēshǎo|to lack
+却|què|but; yet
+确实|quèshí|really; indeed
+然而|rán'ér|however
+热闹|rènao|lively
+任何|rènhé|any
+任务|rènwu|task
+扔|rēng|to throw
+仍然|réngrán|still
+日记|rìjì|diary
+入口|rùkǒu|entrance
+散步|sànbù|to take a walk
+森林|sēnlín|forest
+沙发|shāfā|sofa
+伤心|shāngxīn|sad
+商量|shāngliang|to discuss
+稍微|shāowēi|slightly
+勺子|sháozi|spoon
+社会|shèhuì|society
+申请|shēnqǐng|to apply
+深|shēn|deep
+神奇|shénqí|magical
+甚至|shènzhì|even
+生活|shēnghuó|life; to live
+生命|shēngmìng|life
+生意|shēngyi|business
+省|shěng|province; to save
+剩|shèng|to be left over
+失败|shībài|to fail
+失望|shīwàng|disappointed
+师傅|shīfu|master (craftsman)
+十分|shífēn|very
+实际|shíjì|actual
+实在|shízài|really
+使|shǐ|to make; to cause
+使用|shǐyòng|to use
+世纪|shìjì|century
+是否|shìfǒu|whether
+适合|shìhé|to suit
+适应|shìyìng|to adapt
+收|shōu|to receive; to collect
+收入|shōurù|income
+收拾|shōushi|to tidy up
+首都|shǒudū|capital city
+首先|shǒuxiān|first of all
+受不了|shòubuliǎo|can't stand
+受到|shòudào|to receive
+售货员|shòuhuòyuán|salesperson
+输|shū|to lose
+熟悉|shúxī|to be familiar with
+数量|shùliàng|quantity
+数字|shùzì|number; digit
+帅|shuài|handsome
+顺利|shùnlì|smooth
+顺序|shùnxù|order
+说明|shuōmíng|to explain
+硕士|shuòshì|master's degree
+死|sǐ|to die
+速度|sùdù|speed
+塑料袋|sùliàodài|plastic bag
+酸|suān|sour
+随便|suíbiàn|casual; as you like
+随着|suízhe|along with
+孙子|sūnzi|grandson
+所有|suǒyǒu|all
+台|tái|stage; measure word for machines
+抬|tái|to lift
+态度|tàidù|attitude
+谈|tán|to talk
+弹钢琴|tán gāngqín|to play the piano
+汤|tāng|soup
+糖|táng|sugar; candy
+躺|tǎng|to lie down
+趟|tàng|trip (measure word)
+讨论|tǎolùn|to discuss
+讨厌|tǎoyàn|to hate
+特点|tèdiǎn|characteristic
+提供|tígōng|to provide
+提前|tíqián|in advance
+提醒|tíxǐng|to remind
+填空|tiánkòng|fill in the blank
+条件|tiáojiàn|condition
+停|tíng|to stop
+挺|tǐng|quite
+通过|tōngguò|to pass through; by means of
+通知|tōngzhī|to notify
+同情|tóngqíng|sympathy
+统一|tǒngyī|to unify
+痛快|tòngkuai|happy; to one's heart's content
+偷|tōu|to steal
+突出|tūchū|outstanding
+推|tuī|to push
+推迟|tuīchí|to postpone
+脱|tuō|to take off (clothes)
+袜子|wàzi|socks
+完全|wánquán|completely
+网球|wǎngqiú|tennis
+网站|wǎngzhàn|website
+往往|wǎngwǎng|often
+危险|wēixiǎn|dangerous
+卫生间|wèishēngjiān|bathroom
+味道|wèidào|taste
+温度|wēndù|temperature
+文章|wénzhāng|article
+污染|wūrǎn|pollution
+无聊|wúliáo|boring
+无论|wúlùn|no matter
+误会|wùhuì|misunderstanding
+吸引|xīyǐn|to attract
+咸|xián|salty
+现金|xiànjīn|cash
+羡慕|xiànmù|to envy
+相反|xiāngfǎn|opposite
+相同|xiāngtóng|the same
+香|xiāng|fragrant
+详细|xiángxì|detailed
+响|xiǎng|to sound; loud
+橡皮|xiàngpí|eraser
+消息|xiāoxi|news; message
+小吃|xiǎochī|snack
+小说|xiǎoshuō|novel
+效果|xiàoguǒ|effect
+心情|xīnqíng|mood
+辛苦|xīnkǔ|hard; laborious
+信封|xìnfēng|envelope
+信息|xìnxī|information
+信心|xìnxīn|confidence
+信用卡|xìnyòngkǎ|credit card
+兴奋|xīngfèn|excited
+行|xíng|OK; to walk
+醒|xǐng|to wake up
+幸福|xìngfú|happy
+性别|xìngbié|gender
+性格|xìnggé|personality
+修理|xiūlǐ|to repair
+许多|xǔduō|many
+学期|xuéqī|semester
+压力|yālì|pressure
+呀|ya|particle of surprise
+牙膏|yágāo|toothpaste
+亚洲|Yàzhōu|Asia
+严格|yángé|strict
+严重|yánzhòng|serious
+研究|yánjiū|to research
+盐|yán|salt
+眼镜|yǎnjìng|glasses
+演出|yǎnchū|performance
+演员|yǎnyuán|actor
+阳光|yángguāng|sunshine
+养成|yǎngchéng|to form (a habit)
+样子|yàngzi|appearance
+邀请|yāoqǐng|to invite
+要是|yàoshi|if
+钥匙|yàoshi|key
+也许|yěxǔ|perhaps
+叶子|yèzi|leaf
+页|yè|page
+一切|yíqiè|everything
+以来|yǐlái|since
+亿|yì|hundred million
+意见|yìjiàn|opinion
+艺术|yìshù|art
+因此|yīncǐ|therefore
+引起|yǐnqǐ|to cause
+印象|yìnxiàng|impression
+赢|yíng|to win
+应聘|yìngpìn|to apply for a job
+永远|yǒngyuǎn|forever
+勇敢|yǒnggǎn|brave
+优点|yōudiǎn|strength
+优秀|yōuxiù|excellent
+幽默|yōumò|humorous
+尤其|yóuqí|especially
+由|yóu|by; from
+由于|yóuyú|because of
+邮局|yóujú|post office
+友好|yǒuhǎo|friendly
+友谊|yǒuyì|friendship
+有趣|yǒuqù|interesting
+于是|yúshì|so; thereupon
+愉快|yúkuài|happy
+与|yǔ|and; with
+羽毛球|yǔmáoqiú|badminton
+语法|yǔfǎ|grammar
+语言|yǔyán|language
+预习|yùxí|to preview
+原来|yuánlái|originally; so it was
+原谅|yuánliàng|to forgive
+原因|yuányīn|reason
+约会|yuēhuì|date; appointment
+阅读|yuèdú|to read
+云|yún|cloud
+允许|yǔnxǔ|to allow
+杂志|zázhì|magazine
+咱们|zánmen|we (inclusive)
+暂时|zànshí|temporarily
+脏|zāng|dirty
+责任|zérèn|responsibility
+增加|zēngjiā|to increase
+占线|zhànxiàn|line is busy
+招聘|zhāopìn|to recruit
+真正|zhēnzhèng|real
+整理|zhěnglǐ|to organize
+整齐|zhěngqí|tidy
+正常|zhèngcháng|normal
+正好|zhènghǎo|just right
+正确|zhèngquè|correct
+正式|zhèngshì|formal
+证明|zhèngmíng|to prove
+之|zhī|(literary) of
+支持|zhīchí|to support
+知识|zhīshi|knowledge
+直接|zhíjiē|direct
+值得|zhídé|worth
+职业|zhíyè|occupation
+植物|zhíwù|plant
+只好|zhǐhǎo|have no choice but
+只要|zhǐyào|as long as
+指|zhǐ|to point
+至少|zhìshǎo|at least
+质量|zhìliàng|quality
+重|zhòng|heavy
+重点|zhòngdiǎn|focus
+重视|zhòngshì|to value
+周围|zhōuwéi|surroundings
+主意|zhǔyi|idea
+祝贺|zhùhè|to congratulate
+著名|zhùmíng|famous
+专门|zhuānmén|specially
+专业|zhuānyè|major
+转|zhuǎn|to turn
+赚|zhuàn|to earn
+准确|zhǔnquè|accurate
+准时|zhǔnshí|on time
+仔细|zǐxì|careful
+自然|zìrán|nature
+自信|zìxìn|confident
+总结|zǒngjié|to summarize
+租|zū|to rent
+最好|zuìhǎo|had better
+尊重|zūnzhòng|to respect
+左右|zuǒyòu|approximately
+作家|zuòjiā|writer
+作用|zuòyòng|effect
+作者|zuòzhě|author
+座位|zuòwèi|seat`,
+
+    5: `唉|āi|interjection or grunt of agreement or recognition, to sigh
+爱护|àihù|to cherish, to treasure, to take care of
+爱惜|àixī|to cherish, to treasure, to use sparingly
+爱心|àixīn|compassion, kindness, care for others
+安慰|ānwèi|to comfort, to console
+安装|ānzhuāng|to install, to erect, to fix
+岸|àn|bank; shore; beach; coast
+把握|bǎwò|to grasp (also fig.), to seize, to hold
+摆|bǎi|to arrange, to exhibit, to move to and fro
+班主任|bānzhǔrèn|teacher in charge of a class
+办理|bànlǐ|to handle; to transact; to conduct
+傍晚|bàngwǎn|in the evening, when night falls, towards evening
+包裹|bāoguǒ|to wrap up, to bind up, bundle
+包含|bāohán|to contain, to embody, to include
+薄|báo|thin, cold in manner, indifferent
+宝贝|bǎobèi|treasured object, treasure, darling
+宝贵|bǎoguì|valuable, precious, to value
+保持|bǎochí|to keep, to maintain, to hold
+保存|bǎocún|to conserve, to preserve, to keep
+保留|bǎoliú|to keep, to retain, to have reservations (about sth)
+保险|bǎoxiǎn|insurance, to insure, safe
+报告|bàogào|to inform, to report, to make known
+悲观|bēiguān|pessimistic
+背|bēi|to be burdened, to carry on the back or shoulder
+背景|bèijǐng|background; backdrop; context, (fig.) powerful backer
+被子|bèizi|quilt
+本科|běnkē|undergraduate course, undergraduate (attributive)
+本领|běnlǐng|skill, ability, capability
+本质|běnzhì|essence, nature, innate character
+比例|bǐlì|proportion, scale
+彼此|bǐcǐ|each other; one another
+必然|bìrán|inevitable, certain, necessity
+必需|bìxū|to need, to require, essential
+必要|bìyào|necessary, essential, indispensable
+毕竟|bìjìng|after all, all in all, when all is said and done
+避免|bìmiǎn|to avert, to prevent, to avoid
+编辑|biānjí|to edit, to compile, editor
+鞭炮|biānpào|firecrackers, string of small firecrackers
+便|biàn|plain, informal, suitable
+辩论|biànlùn|debate, argument, to argue over
+标点|biāodiǎn|punctuation, a punctuation mark, to punctuate
+标志|biāozhì|sign, mark, symbol
+表面|biǎomiàn|surface, face, outside
+表明|biǎomíng|to make clear, to make known, to state clearly
+表情|biǎoqíng|(facial) expression, to express one's feelings
+表现|biǎoxiàn|to show, to show off, to display
+丙|bǐng|third of the ten Heavenly Stems 干, third in order
+病毒|bìngdú|virus
+玻璃|bōli|glass, (slang) male homosexual
+脖子|bózi|neck
+博物馆|bówùguǎn|museum
+补充|bǔchōng|to replenish, to supplement, to complement
+不安|bù'ān|unpeaceful, unstable, uneasy
+不必|bùbì|need not, does not have to, not necessarily
+不得了|bùdéliǎo|desperately serious, disastrous, extremely
+不断|bùduàn|unceasing, uninterrupted, continuous
+不好意思|bùhǎoyìsi|to feel embarrassed, to find it embarrassing
+不见得|bùjiànde|not necessarily, not likely
+不免|bùmiǎn|inevitably
+不耐烦|bùnàifán|impatient, to lose patience
+不然|bùrán|not so, no, or else
+不如|bùrú|not equal to, not as good as, inferior to
+不要紧|bùyàojǐn|unimportant, not serious, it doesn't matter
+不足|bùzú|insufficient, lacking, deficiency
+布|bù|variant of 布, to announce, to spread
+步骤|bùzhòu|procedure, step
+部门|bùmén|department, branch, section
+财产|cáichǎn|property, assets, estate
+采访|cǎifǎng|to interview, to gather news, to hunt for and collect
+采取|cǎiqǔ|to adopt or carry out (measures, policies, course of action)
+彩虹|cǎihóng|rainbow
+踩|cǎi|to step on, to tread, to stamp
+参考|cānkǎo|consultation, reference, to consult
+参与|cānyù|to participate (in sth)
+残疾|cánjí|disabled, handicapped, deformity on a person or animal
+惭愧|cánkuì|ashamed
+操场|cāochǎng|playground, sports field, drill ground
+操心|cāoxīn|to worry about
+册|cè|book, booklet, classifier for books
+测验|cèyàn|test, to test
+曾经|céngjīng|once, already, former
+叉子|chāzi|fork
+插|chā|to insert, stick in, pierce
+差别|chābié|difference; distinction; disparity
+拆|chāi|to tear open, to tear down, to tear apart
+产品|chǎnpǐn|goods, merchandise, product
+产生|chǎnshēng|to arise; to come into being; to come about
+常识|chángshí|common sense, general knowledge
+抄|chāo|to make a copy, to plagiarize, to search and seize
+朝|cháo|imperial or royal court, government, dynasty
+朝代|cháodài|dynasty, reign (of a king)
+炒|chǎo|to sauté, to stir-fry, to speculate
+车库|chēkù|garage
+车厢|chēxiāng|carriage
+彻底|chèdǐ|thorough, thoroughly, complete
+沉默|chénmò|taciturn, uncommunicative, silent
+趁|chèn|to avail oneself of, to take advantage of
+称呼|chēnghu|to call; to address as, form of address; appellation
+称赞|chēngzàn|to praise, to acclaim, to commend
+成分|chéngfèn|composition; ingredient; element; component, one's social status
+成果|chéngguǒ|result, achievement, gain
+成就|chéngjiù|accomplishment, success, achievement
+成立|chénglì|to establish, to set up, to be tenable
+成语|chéngyǔ|Chinese set expression, typically of 4 characters, often
+成长|chéngzhǎng|to mature, to grow, growth
+承担|chéngdān|to undertake, to assume (responsibility etc)
+承认|chéngrèn|to admit, to concede, to recognize
+承受|chéngshòu|to bear, to support, to inherit
+诚恳|chéngkěn|sincere, honest, cordial
+乘|chéng|to ride, to mount, to make use of
+程度|chéngdù|degree; level; extent
+程序|chéngxù|procedures, sequence, order
+吃亏|chīkuī|to suffer losses, to come to grief, to lose out
+池子|chízi|pond, bathhouse pool, dance floor of a ballroom
+持续|chíxù|to continue, to persist, to last
+尺子|chǐzi|ruler (measuring instrument)
+翅膀|chìbǎng|wing
+充电器|chōngdiànqì|battery charger
+充分|chōngfèn|ample, sufficient, adequate
+充满|chōngmǎn|full of, brimming with, very full
+冲|chōng|(of water) to dash against, to mix with water, to infuse
+宠物|chǒngwù|house pet
+抽屉|chōuti|drawer
+抽象|chōuxiàng|abstract, abstraction
+丑|chǒu|clown, 2nd earthly branch: 1-3 a.m., 12th solar month
+臭|chòu|stench, smelly, to smell (bad)
+出版|chūbǎn|to publish
+出口|chūkǒu|an exit, to speak, to export
+出色|chūsè|remarkable; outstanding
+出席|chūxí|to attend, to participate, present
+初级|chūjí|junior, primary
+除|chú|to get rid of, to remove, to exclude
+除非|chúfēi|only if (..., or otherwise, ...)
+除夕|Chúxī|lunar New Year's Eve
+处理|chǔlǐ|to handle; to deal with, to punish
+传播|chuánbō|to disseminate; to propagate; to spread
+传递|chuándì|to transmit; to pass on to sb else, (math.) transitive
+传染|chuánrǎn|to infect, contagious
+传说|chuánshuō|legend; folk tale, to repeat from mouth to mouth; they say that...
+传统|chuántǒng|tradition, traditional, convention
+窗帘|chuānglián|window curtains
+闯|chuǎng|to rush, to charge, to dash
+创造|chuàngzào|to create, to bring about, to produce
+吹|chuī|to blow, to play a wind instrument, to blast
+辞职|cízhí|to resign
+磁带|cídài|magnetic tape
+此外|cǐwài|besides, in addition, moreover
+次要|cìyào|secondary
+刺激|cìjī|to provoke; to irritate; to upset; to stimulate; to excite, irritant
+匆忙|cōngmáng|hasty, hurried
+从此|cóngcǐ|from now on, since then, henceforth
+从而|cóng'ér|thus, thereby
+从前|cóngqián|previously, formerly, once upon a time
+从事|cóngshì|to go for, to engage in, to undertake
+促进|cùjìn|to promote (an idea or cause), to advance, boost
+促使|cùshǐ|to induce, to promote, to urge
+醋|cù|vinegar, jealousy (in love rivalry)
+催|cuī|to urge, to press, to prompt
+存在|cúnzài|to exist, to be, existence
+措施|cuòshī|measure, step
+错误|cuòwù|mistaken; false; wrong, error; mistake
+答应|dāying|to answer; to respond
+打工|dǎgōng|to work a temporary or casual job
+打交道|dǎjiāodào|to come into contact with, to have dealings
+打喷嚏|dǎpēntì|to sneeze
+打听|dǎting|to ask about, to make some inquiries, to ask around
+打招呼|dǎzhāohu|to greet sb by word or action, to give prior notice
+大方|dàfāng|expert, scholar, mother earth
+大象|dàxiàng|elephant
+大型|dàxíng|large, large-scale
+呆|dāi|foolish, stupid, expressionless
+待遇|dàiyù|treatment, pay, salary
+贷款|dàikuǎn|a loan, to provide a loan (e.g. bank)
+单纯|dānchún|simple, pure, unsophisticated
+单调|dāndiào|monotonous
+单独|dāndú|alone, by oneself, on one's own
+单位|dānwèi|unit (of measure), unit (group of people as a whole), work unit
+单元|dānyuán|unit (forming an entity), element
+担任|dānrèn|to hold a governmental office or post, to assume office of
+耽误|dānwu|to delay, to hold up, to waste time
+胆小鬼|dǎnxiǎoguǐ|coward
+淡|dàn|insipid, diluted, weak
+当代|dāngdài|the present age, the contemporary era
+挡|dǎng|to resist, to obstruct, to hinder
+导演|dǎoyǎn|to direct, director (film etc)
+导致|dǎozhì|to lead to, to create, to cause
+岛|dǎo|island
+到达|dàodá|to reach; to arrive
+倒|dǎo|to fall; to collapse; to lie horizontally, to fail; to go bankrupt
+倒霉|dǎoméi|to have bad luck, to be out of luck
+道德|dàodé|virtue, morality, ethics
+道理|dàoli|reason, argument, sense
+地道|dìdào|tunnel, causeway
+地理|dìlǐ|geography
+地区|dìqū|local, regional, district (not necessarily formal administrative unit)
+地毯|dìtǎn|carpet, rug
+地位|dìwèi|position, status, place
+地震|dìzhèn|earthquake
+的确|díquè|really, indeed
+登记|dēngjì|to register (one's name)
+等待|děngdài|to wait; to wait for
+等候|děnghòu|to wait, to wait for
+等于|děngyú|to equal, to be tantamount to
+滴|dī|a drop, to drip
+敌人|dírén|enemy
+递|dì|to hand over; to pass on; to deliver
+点头|diǎntóu|to nod
+点心|diǎnxin|light refreshments, pastry, dim sum (in Cantonese cooking)
+电池|diànchí|battery
+电台|diàntái|transmitter-receiver, broadcasting station, radio station
+钓|diào|to fish with a hook and bait
+调皮|tiáopí|naughty, mischievous, unruly
+调整|tiáozhěng|to adjust, adjustment, revision
+丁|dīng|male adult, the 4th of the 10 Heavenly Stems 干
+顶|dǐng|apex, crown of the head, top
+动画片|dònghuàpiàn|animated film
+冻|dòng|to freeze, to feel very cold, aspic or jelly
+洞|dòng|cave, hole, zero (unambiguous spoken form when spelling out numbers)
+豆腐|dòufu|tofu, bean curd
+逗|dòu|to tease (playfully); to entice, (coll.) to joke
+独立|dúlì|independent, independence, to stand alone
+独特|dútè|unique; distinctive
+度过|dùguò|to pass, to spend (time), to survive
+短信|duǎnxìn|text message, SMS
+堆|duī|to pile up, to heap up, a mass
+对比|duìbǐ|to contrast, contrast, ratio
+对待|duìdài|to treat, treatment
+对手|duìshǒu|opponent, rival, competitor
+对象|duìxiàng|target; object, partner; boyfriend; girlfriend
+吨|dūn|ton (loanword), Taiwan pr. [dùn]
+蹲|dūn|to crouch, to squat, to stay (somewhere)
+多亏|duōkuī|thanks to, luckily
+多余|duōyú|superfluous, unnecessary, surplus
+躲藏|duǒcáng|to conceal oneself, to go into hiding, to take cover
+恶劣|èliè|vile, nasty, of very poor quality
+发表|fābiǎo|to issue, to publish
+发愁|fāchóu|to worry, to fret, to be anxious
+发达|fādá|well-developed; flourishing, to develop; to promote; to expand
+发抖|fādǒu|to tremble, to shake, to shiver
+发挥|fāhuī|to display, to exhibit, to bring out implicit or innate qualities
+发明|fāmíng|to invent, an invention
+发言|fāyán|to make a speech, statement, utterance
+罚款|fákuǎn|to fine, penalty, fine (monetary)
+法院|fǎyuàn|court of law, court
+翻|fān|to turn over, to flip over, to overturn
+凡是|fánshì|each and every, every, all
+繁荣|fánróng|prosperous; booming (economy)
+反而|fǎn'ér|on the contrary; instead
+反复|fǎnfù|repeatedly, over and over, to upend
+反应|fǎnyìng|to react, to respond, reaction
+反正|fǎnzhèng|anyway, in any case, to come over from the enemy's side
+方|fāng|square, power or involution (math.), upright
+方案|fāng'àn|plan, program (for action etc), proposal
+方式|fāngshì|way; manner; style; mode; pattern
+妨碍|fáng'ài|to hinder, to obstruct
+仿佛|fǎngfú|to seem, as if, alike
+非|fēi|to not be; not, wrong; incorrect, non-; un-; in-; de-
+肥皂|féizào|soap
+废话|fèihuà|nonsense, rubbish, superfluous words
+肺|fèi|lung
+费用|fèiyòng|cost, expenditure, expense
+分别|fēnbié|to part; to leave each other, to distinguish; to tell apart
+分布|fēnbù|to scatter, to distribute, to be distributed (over an area etc)
+分配|fēnpèi|to distribute, to assign, to allocate
+分析|fēnxī|to analyze, analysis
+纷纷|fēnfēn|one after another, in succession, one by one
+奋斗|fèndòu|to strive; to struggle
+愤怒|fènnù|angry, indignant, wrath
+风格|fēnggé|style
+风俗|fēngsú|social custom
+风险|fēngxiǎn|risk; hazard
+疯狂|fēngkuáng|crazy; frenzied; wild
+讽刺|fěngcì|to satirize, to mock, irony
+否定|fǒudìng|to negate, to deny, to reject
+否认|fǒurèn|to declare to be untrue, to deny
+扶|fú|to support with the hand, to help sb up
+服从|fúcóng|to obey (an order), to comply, to defer
+服装|fúzhuāng|dress, clothing, costume
+幅|fú|width, roll, classifier for textiles or pictures
+辅导|fǔdǎo|to give guidance, to mentor, to counsel
+妇女|fùnǚ|woman
+复制|fùzhì|to duplicate, to make a copy of, to copy
+改革|gǎigé|reform, to reform
+改进|gǎijìn|to improve; to make better, improvement
+改善|gǎishàn|to make better; to improve
+改正|gǎizhèng|to correct, to amend, to put right
+盖|gài|lid, top, cover
+概括|gàikuò|to summarize; to generalize, briefly; in broad outline
+概念|gàiniàn|concept, idea
+赶紧|gǎnjǐn|hurriedly, without delay
+赶快|gǎnkuài|quickly; at once
+感激|gǎnjī|to be grateful, to appreciate, thankful
+感受|gǎnshòu|to sense, perception, to feel (through the senses)
+感想|gǎnxiǎng|impressions, reflections, thoughts
+干脆|gāncuì|candid, direct and to the point, simply
+干活儿|gànhuór|erhua variant of 干活, (coll.) to work, (coll.) to be employed
+钢铁|gāngtiě|steel
+高档|gāodàng|superior quality, high grade, top grade
+高速|gāosù|high speed, expressway (abbr. for 路)
+搞|gǎo|to do, to make, to go in for
+告别|gàobié|to leave; to part from, to bid farewell to; to say goodbye to
+鸽子|gēzi|pigeon, dove, various birds of the family Columbidae
+革命|gémìng|to withdraw the mandate of heaven, revolution, revolutionary
+格外|géwài|especially, particularly
+隔壁|gébì|next door, neighbor
+个别|gèbié|individually; one by one, just one or two; exceptional; rare
+个人|gèrén|individual, personal, oneself
+个性|gèxìng|individuality, personality
+各自|gèzì|each, respective, apiece
+根|gēn|root, basis, classifier for long slender objects, e.g. cigarettes,
+根本|gēnběn|fundamental, basic, root
+更加|gèngjiā|more (than sth else), even more
+工厂|gōngchǎng|factory
+工程师|gōngchéngshī|engineer
+工人|gōngrén|worker
+工业|gōngyè|industry
+公布|gōngbù|to announce, to make public, to publish
+公开|gōngkāi|open; overt; public, to make public; to release
+公平|gōngpíng|fair, impartial
+公寓|gōngyù|apartment building, block of flats
+公元|gōngyuán|CE (Common Era), Christian Era, AD (Anno Domini)
+公主|gōngzhǔ|princess
+功夫|gōngfu|skill, art, kung fu
+功能|gōngnéng|function; capability
+贡献|gòngxiàn|to contribute, to dedicate, to devote
+沟通|gōutōng|to join; to connect; to link up, to communicate
+构成|gòuchéng|to constitute, to form, to compose
+姑姑|gūgu|paternal aunt
+姑娘|gūniang|girl, young woman, young lady
+古代|gǔdài|ancient times
+古典|gǔdiǎn|classical
+古老|gǔlǎo|ancient, old, age-old
+股票|gǔpiào|share certificate, stock (finance)
+骨头|gǔtou|bone, moral character, bitterness
+鼓舞|gǔwǔ|heartening (news), to boost (morale)
+固定|gùdìng|to fix, to fasten, to set rigidly in place
+固体|gùtǐ|solid
+雇佣|gùyōng|to employ, to hire
+挂号|guàhào|to register (at a hospital etc), to send by registered mail
+乖|guāi|(of a child) obedient, well-behaved, clever
+拐弯|guǎiwān|to go round a curve, to turn a corner, fig. a new direction
+怪不得|guàibude|no wonder!, so that's why!
+关闭|guānbì|to close; to shut (a window etc), (of a shop, school etc) to shut down
+关怀|guānhuái|care, solicitude, to show care for
+观察|guānchá|to observe; to watch; to survey
+观点|guāndiǎn|point of view, viewpoint, standpoint
+观念|guānniàn|notion, thought, concept
+官|guān|government official, governmental, official
+冠军|guànjūn|champion
+管子|guǎnzi|tube, pipe, drinking straw
+罐头|guàntou|tin, can
+光滑|guānghuá|glossy; sleek; smooth
+光临|guānglín|(formal) to honor with one's presence, to attend
+光明|guāngmíng|light, radiance, (fig.) bright (prospects etc)
+光盘|guāngpán|compact disc (CD); DVD; CD-ROM
+光荣|guāngróng|honor and glory, glorious
+广场|guǎngchǎng|public square; plaza
+广大|guǎngdà|(of an area) vast or extensive, large-scale, widespread
+广泛|guǎngfàn|extensive, wide range
+规矩|guīju|lit. compass and set square, fig. established standard, rule
+规律|guīlǜ|rule (e.g. of science), law of behavior, regular pattern
+规模|guīmó|scale, scope, extent
+规则|guīzé|rule, regulation, rules and regulations
+柜台|guìtái|sales counter, front desk, bar
+滚|gǔn|to boil, to roll, to take a hike
+锅|guō|pot; pan; wok; cauldron, pot-shaped thing
+国庆节|Guóqìngjié|PRC National Day (October 1st)
+果实|guǒshí|fruit (produced by a plant), (fig.) fruits (of success etc), results
+过分|guòfèn|excessive, undue, overly
+过敏|guòmǐn|oversensitive, allergic, allergy
+哈|hā|(interj.) ha!, (onom. for laughter), (slang) to be infatuated with
+海关|hǎiguān|customs (i.e. border crossing inspection)
+喊|hǎn|to yell, to shout, to call out for (a person)
+豪华|háohuá|luxurious
+好奇|hàoqí|inquisitive, curious, inquisitiveness
+合法|héfǎ|lawful, legitimate, legal
+合理|hélǐ|rational; reasonable; sensible; fair
+合同|hétong|(business) contract
+合影|héyǐng|to take a joint photo, group photo
+合作|hézuò|to cooperate, to collaborate, to work together
+何必|hébì|there is no need, why should
+何况|hékuàng|let alone, to say nothing of, besides
+和平|hépíng|peace, peaceful
+核心|héxīn|core; nucleus
+恨|hèn|to hate, to regret
+横|héng|horizontal, across, crosswise
+后果|hòuguǒ|consequences, aftermath
+呼吸|hūxī|to breathe
+忽视|hūshì|to neglect; to overlook; to disregard; to ignore
+胡说|húshuō|to talk nonsense, drivel
+胡同|hútòng|lane, alley
+胡须|húxū|beard
+壶|hú|pot, classifier for bottled liquid
+蝴蝶|húdié|butterfly
+糊涂|hútu|muddled, silly, confused
+花生|huāshēng|peanut, groundnut
+华裔|Huáyì|ethnic Chinese, non-Chinese citizen of Chinese ancestry
+滑冰|huábīng|to skate, skating
+化学|huàxué|chemistry, chemical
+划船|huáchuán|to row a boat, rowing boat, rowing (sport)
+话题|huàtí|subject (of a talk or conversation), topic
+怀念|huáiniàn|to cherish the memory of, to think of, to reminisce
+缓解|huǎnjiě|to bring relief, to alleviate (a crisis), to dull (a pain)
+幻想|huànxiǎng|delusion, fantasy
+慌张|huāngzhāng|flustered, agitated
+皇帝|huángdì|emperor
+皇后|huánghòu|empress, imperial consort
+黄瓜|huángguā|cucumber
+黄金|huángjīn|gold, golden (opportunity), prime (time)
+灰|huī|ash, dust, lime
+灰尘|huīchén|dust
+灰心|huīxīn|to lose heart, to be discouraged
+恢复|huīfù|to reinstate, to resume, to restore
+挥|huī|to wave, to brandish, to command
+汇率|huìlǜ|exchange rate
+会计|kuàijì|accountant, accountancy, accounting
+婚礼|hūnlǐ|wedding ceremony, wedding
+婚姻|hūnyīn|matrimony, wedding, marriage
+活跃|huóyuè|active, lively, excited
+火柴|huǒchái|match (for lighting fire)
+伙伴|huǒbàn|partner, companion, comrade
+机器|jīqì|machine
+肌肉|jīròu|muscle, flesh
+基本|jīběn|basic, fundamental, main
+激烈|jīliè|(of competition or fighting) intense, fierce, (of pain) acute
+及格|jígé|to pass an exam or a test, to meet a minimum standard
+急忙|jímáng|hastily
+集体|jítǐ|collective (decision), joint (effort), a group
+集中|jízhōng|to concentrate, to centralize, to focus
+计算|jìsuàn|to count, to calculate, to compute
+记录|jìlù|to record, record (written account), note-taker
+记忆|jìyì|to remember, to recall, memory
+纪录|jìlù|variant of 记录
+纪律|jìlǜ|discipline
+纪念|jìniàn|to commemorate; to honor the memory of, memento; keepsake; souvenir
+寂寞|jìmò|lonely, lonesome, (of a place) quiet
+夹子|jiāzi|clip, clamp, tongs
+家庭|jiātíng|family, household
+家务|jiāwù|household duties, housework
+家乡|jiāxiāng|hometown, native place
+嘉宾|jiābīn|esteemed guest, honored guest, guest (on a show)
+甲|jiǎ|first of the ten Heavenly Stems 干
+假如|jiǎrú|if
+假装|jiǎzhuāng|to feign, to pretend
+价值|jiàzhí|value, worth, fig. values (ethical, cultural etc)
+驾驶|jiàshǐ|to pilot (ship, airplane etc), to drive
+嫁|jià|(of a woman) to marry, to marry off a daughter, to shift (blame etc)
+尖锐|jiānruì|sharp, intense, penetrating
+坚决|jiānjué|firm; resolute; determined
+坚强|jiānqiáng|staunch, strong
+肩膀|jiānbǎng|shoulder
+艰巨|jiānjù|arduous, terrible (task), very difficult
+艰苦|jiānkǔ|difficult, hard, arduous
+煎|jiān|to pan fry, to sauté
+捡|jiǎn|to pick up, to collect, to gather
+剪刀|jiǎndāo|scissors
+简直|jiǎnzhí|simply; really
+建立|jiànlì|to establish, to set up, to found
+建设|jiànshè|to build; to construct; to establish; to develop; to
+建筑|jiànzhù|to construct, building
+健身房|jiànshēnfáng|gym, gymnasium
+键盘|jiànpán|keyboard
+讲究|jiǎngjiu|to pay particular attention to, carefully selected for quality
+讲座|jiǎngzuò|a course of lectures
+酱油|jiàngyóu|soy sauce
+交换|jiāohuàn|to exchange, to swap, to switch (telecom)
+交际|jiāojì|communication, social intercourse
+浇|jiāo|to pour liquid, to irrigate (using waterwheel), to water
+胶水|jiāoshuǐ|glue
+角度|jiǎodù|angle, point of view
+角色|juésè|role, character in a novel, persona
+狡猾|jiǎohuá|crafty; cunning; sly
+教材|jiàocái|teaching material
+教练|jiàoliàn|instructor, sports coach, trainer
+教训|jiàoxun|to provide guidance, to lecture sb, to upbraid
+阶段|jiēduàn|stage, section, phase
+接触|jiēchù|to touch, to contact, access
+接待|jiēdài|to receive (a visitor), to admit (allow sb to enter)
+接近|jiējìn|to approach, to get close to
+节|jié|joint; node, (bound form) section; segment, solar term
+节省|jiéshěng|saving, to save, to use sparingly
+结构|jiégòu|structure, composition, makeup
+结合|jiéhé|to combine, to link, to integrate
+结论|jiélùn|conclusion, verdict, to conclude
+结实|jiēshí|to bear fruit
+结账|jiézhàng|to pay the bill, to settle accounts, also written 结帐
+解放|jiěfàng|to liberate, to emancipate, liberation
+解说员|jiěshuōyuán|commentator
+戒烟|jièyān|to give up smoking
+戒指|jièzhi|(finger) ring
+届|jiè|to arrive at (place or time), period, to become due
+借口|jièkǒu|to use as an excuse, excuse; pretext
+金属|jīnshǔ|metal
+尽力|jìnlì|to strive one's hardest, to spare no effort
+尽量|jǐnliàng|as much as possible, to the greatest extent
+紧|jǐn|tight, strict, close at hand
+紧急|jǐnjí|urgent, emergency
+谨慎|jǐnshèn|cautious, prudent
+近代|jìndài|the not-very-distant past, modern times, excluding recent decades
+进步|jìnbù|progress; improvement, to improve; to progress
+进口|jìnkǒu|to import, imported, entrance
+经典|jīngdiǎn|the classics, scriptures, classical
+经营|jīngyíng|to engage in (business etc); to run; to operate
+精力|jīnglì|energy
+敬爱|jìng'ài|to respect and love; to hold in high esteem
+酒吧|jiǔbā|bar, pub, saloon
+救|jiù|to save, to assist, to rescue
+救护车|jiùhùchē|ambulance
+舅舅|jiùjiu|mother's brother, maternal uncle (informal)
+居然|jūrán|unexpectedly, to one's surprise, go so far as to
+桔子|júzi|tangerine, also written 橘子
+举|jǔ|to lift, to hold up, to cite
+巨大|jùdà|huge, immense, very large
+具备|jùbèi|to possess, to have, equipped with
+具体|jùtǐ|concrete, definite, specific
+俱乐部|jùlèbù|club (the organisation or its premises) (loanword)
+据说|jùshuō|it is said that; reportedly
+捐|juān|to relinquish; to abandon, to contribute; to donate
+卷|juǎn|to roll up, roll, classifier for small rolled things
+决赛|juésài|finals (of a competition)
+决心|juéxīn|determination, resolution, determined
+绝对|juéduì|absolute, unconditional
+军事|jūnshì|military affairs, (attributive) military
+均匀|jūnyún|even, well-distributed, homogeneous
+卡车|kǎchē|truck
+开发|kāifā|to exploit (a resource), to open up (for development), to develop
+开放|kāifàng|to bloom, to open, to be open (to the public)
+开幕式|kāimùshì|opening ceremony
+砍|kǎn|to chop, to cut down, to throw sth at sb
+看不起|kànbuqǐ|to look down upon, to despise
+看来|kànlai|apparently, it seems that
+抗议|kàngyì|to protest, protest
+颗|kē|classifier for small spheres, pearls, corn grains, teeth,
+可见|kějiàn|it can clearly be seen (that this is the case), it is (thus) clear
+可靠|kěkào|reliable
+可怕|kěpà|awful, dreadful, fearful
+克|kè|to be able to, to subdue, to restrain
+克服|kèfú|(try to) overcome (hardships etc), to conquer, to put up with
+刻苦|kèkǔ|hardworking, assiduous
+客观|kèguān|objective, impartial
+课程|kèchéng|course, academic program
+空间|kōngjiān|space; room, (fig.) scope; leeway, (astronomy) outer space
+空闲|kòngxián|idle, free time, leisure
+恐怖|kǒngbù|terrible, frightful, frightening
+控制|kòngzhì|to control
+口味|kǒuwèi|a person's preferences, tastes (in food), flavor
+蜡烛|làzhú|candle
+辣椒|làjiāo|hot pepper, chili
+来自|láizì|to come from (a place), From: (in email header)
+拦|lán|to block sb's path, to obstruct, to flag down (a taxi)
+烂|làn|soft; mushy, well-cooked and soft, to rot; to decompose
+狼|láng|wolf
+劳动|láodòng|work, toil, physical labor
+劳驾|láojià|excuse me
+老百姓|lǎobǎixìng|ordinary people, the "person in the street"
+老板|lǎobǎn|boss, business proprietor
+老实|lǎoshi|honest; sincere, well-behaved, naive; gullible
+老鼠|lǎoshǔ|rat, mouse
+姥姥|lǎolao|(coll.) mother's mother, maternal grandmother
+乐观|lèguān|optimistic, hopeful
+了不起|liǎobuqǐ|amazing, terrific, extraordinary
+雷|léi|thunder, (bound form) (military) mine, as in 雷 land mine
+类|lèi|kind, type, class
+厘米|límǐ|centimeter
+离婚|líhūn|to divorce
+梨|lí|pear
+理论|lǐlùn|theory, to argue, to take notice of
+理由|lǐyóu|reason, grounds, justification
+力量|lìliang|power, force, strength
+立方|lìfāng|cube (math.)
+立即|lìjí|immediately
+立刻|lìkè|forthwith, immediate, prompt
+利润|lìrùn|profits
+利息|lìxī|interest (on a loan)
+利益|lìyì|benefit, (in sb's) interest
+利用|lìyòng|to exploit, to make use of, to use
+粒|lì|grain, granule, classifier for small round things
+连忙|liánmáng|promptly, at once
+连续剧|liánxùjù|serialized drama, dramatic series, show in parts
+联合|liánhé|to combine, to join, unite
+恋爱|liàn'ài|(romantic) love, in love, to have an affair
+良好|liánghǎo|good, favorable, well
+粮食|liángshi|foodstuff, cereals
+临时|línshí|as the time draws near, at the last moment, temporary
+灵活|línghuó|flexible, nimble, agile
+铃|líng|(small) bell
+零件|língjiàn|part, component
+零食|língshí|between-meal nibbles, snacks
+领导|lǐngdǎo|lead, leading, to lead
+领域|lǐngyù|domain, sphere, field
+浏览|liúlǎn|to skim over, to browse
+流传|liúchuán|to spread, to circulate, to hand down
+龙|lóng|dragon, imperial
+漏|lòu|to leak, to divulge, to leave out by mistake
+陆地|lùdì|dry land (as opposed to the sea)
+陆续|lùxù|in turn, successively, one after the other
+录取|lùqǔ|to accept an applicant, to admit (a student)
+录音|lùyīn|to record (sound), sound recording
+露|lòu|to show, to reveal, to betray
+轮流|lúnliú|to alternate; to take turns
+论文|lùnwén|paper, treatise, thesis
+逻辑|luóji|logic (loanword)
+落后|luòhòu|to fall behind, to lag (in technology etc), backward
+骂|mà|to scold, to abuse, to curse
+麦克风|màikèfēng|microphone (loanword)
+馒头|mántou|steamed roll, steamed bun, steamed bread
+满足|mǎnzú|to satisfy, to meet (the needs of), satisfied
+毛病|máobìng|fault, defect, shortcomings
+矛盾|máodùn|contradiction, conflicting views, contradictory
+冒险|màoxiǎn|to take risks, to take chances, foray
+贸易|màoyì|(commercial) trade
+眉毛|méimao|eyebrow
+煤炭|méitàn|coal
+美术|měishù|art, fine arts, painting
+魅力|mèilì|charm, fascination, glamor
+谜语|míyǔ|riddle, conundrum
+秘密|mìmì|secret; private; confidential; clandestine, a secret
+秘书|mìshū|secretary
+密切|mìqiè|close, familiar, intimate
+蜜蜂|mìfēng|bee, honeybee
+棉花|miánhua|cotton
+面对|miànduì|to face; to confront
+面积|miànjī|area (of a floor, piece of land etc), surface area
+面临|miànlín|to face sth; to be confronted with
+苗条|miáotiao|(of a woman) slim, slender, graceful
+描写|miáoxiě|to describe, to depict, to portray
+民主|mínzhǔ|democracy
+名牌|míngpái|famous brand, nameplate, name tag
+名片|míngpiàn|(business) card
+名胜|míngshèng|a place famous for its scenery or historical relics, scenic spot
+明确|míngquè|clear-cut; definite; explicit
+明显|míngxiǎn|clear, distinct, obvious
+明信片|míngxìnpiàn|postcard
+明星|míngxīng|star; celebrity
+命令|mìnglìng|order, command
+命运|mìngyùn|fate; destiny
+摸|mō|to feel with the hand, to touch, to stroke
+模仿|mófǎng|to imitate, to copy, to emulate
+模糊|móhu|vague, indistinct, fuzzy
+摩托车|mótuōchē|(loanword) motorbike; motorcycle
+陌生|mòshēng|strange, unfamiliar
+某|mǒu|some, a certain, sb or sth indefinite
+木头|mùtou|slow-witted, blockhead, log (of wood, timber etc)
+目标|mùbiāo|target, goal, objective
+目录|mùlù|catalog, table of contents, directory (on computer hard drive)
+目前|mùqián|at the present time, currently
+哪怕|nǎpà|even, even if, even though
+难怪|nánguài|(it's) no wonder (that...), (it's) not surprising (that)
+难看|nánkàn|ugly, unsightly
+脑袋|nǎodai|head, skull, brains
+内科|nèikē|internal medicine; general medicine
+嫩|nèn|young and tender, (of food) tender; lightly cooked, (of color) light
+能干|nénggàn|capable, competent
+能源|néngyuán|energy, power source
+年代|niándài|a decade of a century (e.g. the Sixties), age, era
+年纪|niánjì|age
+念|niàn|to read, to study (a subject), to attend (a school)
+宁可|nìngkě|preferably, one would prefer to...(or not to...), would rather
+牛仔裤|niúzǎikù|jeans
+农民|nóngmín|peasant, farmer
+农业|nóngyè|agriculture, farming
+浓|nóng|concentrated, dense, strong (smell etc)
+女士|nǚshì|lady, madam, Miss
+偶然|ǒurán|incidentally, occasional, occasionally
+拍|pāi|to pat, to clap, to slap
+排球|páiqiú|volleyball
+派|pài|clique, school, group
+盼望|pànwàng|to hope for; to look forward to
+培养|péiyǎng|to cultivate, to breed, to foster
+赔偿|péicháng|to compensate
+佩服|pèifú|to admire
+配合|pèihé|matching, fitting in with, compatible with
+盆|pén|basin, flower pot
+碰见|pèngjiàn|to run into, to meet (unexpectedly), to bump into
+批|pī|to ascertain, to act on, to criticize
+批准|pīzhǔn|to approve; to ratify
+披|pī|to drape over one's shoulders, to open, to unroll
+疲劳|píláo|fatigue, wearily, weariness
+匹|pī|mate, one of a pair
+片|piān|disk, sheet
+片面|piànmiàn|unilateral, one-sided
+飘|piāo|to float
+频道|píndào|frequency, (television) channel
+品种|pǐnzhǒng|breed, variety
+平|píng|flat, level, equal
+平常|píngcháng|ordinary, common, usually
+平等|píngděng|equal, equality
+平方|píngfāng|square (as in square foot, square mile, square root)
+平衡|pínghéng|balance, equilibrium
+平静|píngjìng|tranquil, undisturbed, serene
+平均|píngjūn|average; on average, evenly; in equal proportions
+评价|píngjià|to evaluate, to assess
+凭|píng|to lean against, to rely on, on the basis of
+迫切|pòqiè|urgent; pressing
+破产|pòchǎn|to go bankrupt, to become impoverished, bankruptcy
+破坏|pòhuài|destruction, damage, to wreck
+朴素|pǔsù|plain and simple, unadorned, simple living
+期待|qīdài|to look forward to, to await, expectation
+期间|qījiān|period of time, time, time period
+其余|qíyú|the rest, the others, remaining
+奇迹|qíjì|miracle, miraculous, wonder
+企图|qǐtú|to attempt, to try, attempt
+企业|qǐyè|company; firm; enterprise; corporation
+启发|qǐfā|to enlighten, to explain (a text etc)
+气氛|qìfēn|atmosphere; mood
+汽油|qìyóu|gasoline
+牵|qiān|to lead along, to pull (an animal on a tether)
+谦虚|qiānxū|modest, self-effacing, to make modest remarks
+签字|qiānzì|to sign (one's name), signature
+前途|qiántú|prospects, future outlook, journey
+浅|jiān|sound of moving water
+欠|qiàn|to owe, to lack, (literary) to be deficient in
+枪|qiāng|gun, firearm, rifle
+强调|qiángdiào|to emphasize (a statement), to stress
+强烈|qiángliè|strong; intense
+抢|qiāng|(literary) to knock against (esp. to knock one's head on
+悄悄|qiāoqiāo|quiet; making little or no noise, surreptitious; stealthy
+瞧|qiáo|to look at, to see, to see (a doctor)
+巧妙|qiǎomiào|ingenious; clever, ingenuity; artifice
+切|qiē|to cut; to slice; to carve, (math) tangential
+亲爱|qīn'ài|dear, beloved, darling
+亲切|qīnqiè|amiable, cordial, close and dear
+亲自|qīnzì|personally, in person, oneself
+侵略|qīnlüè|to invade, invasion
+勤奋|qínfèn|hardworking, diligent
+勤劳|qínláo|hardworking, industrious, diligent
+青|qīng|green, blue, black
+青春|qīngchūn|youth, youthfulness
+青少年|qīngshàonián|adolescent, youth, teenager
+轻视|qīngshì|contempt, contemptuous, to despise
+清淡|qīngdàn|light (of food, not greasy or strongly flavored), insipid
+情景|qíngjǐng|scene, spectacle, circumstances
+情绪|qíngxù|mood, state of mind, moodiness
+请求|qǐngqiú|to request; to ask, request
+庆祝|qìngzhù|to celebrate
+球迷|qiúmí|fan (ball sports)
+趋势|qūshì|trend; tendency
+娶|qǔ|to take a wife, to marry (a woman)
+去世|qùshì|to pass away, to die
+圈|juān|to confine, to lock up, to pen in
+全面|quánmiàn|all-around, comprehensive, total
+权力|quánlì|power, authority
+权利|quánlì|right (i.e. an entitlement to sth), (classical) power and wealth
+劝|quàn|to advise, to urge, to try to persuade
+缺乏|quēfá|to lack; to be short of
+确定|quèdìng|definite, certain, fixed
+确认|quèrèn|to confirm, to verify, confirmation
+燃烧|ránshāo|to ignite, to combust, to burn
+嚷|rǎng|to shout, to bellow, to make a big deal of sth
+绕|rào|to wind, to coil (thread), to rotate around
+热爱|rè'ài|to love ardently, to adore
+热烈|rèliè|enthusiastic, ardent, warm
+热心|rèxīn|enthusiastic; ardent; zealous
+人才|réncái|talent, talented person, looks
+人口|rénkǒu|population, people
+人类|rénlèi|humanity, human race, mankind
+人生|rénshēng|life (one's time on earth)
+人事|rénshì|personnel, human resources, human affairs
+人物|rénwù|person; personage; figure (esp. sb of importance)
+人员|rényuán|staff, crew, personnel
+忍不住|rěnbuzhù|cannot help, unable to bear
+日常|rìcháng|day-to-day; daily; everyday
+日程|rìchéng|schedule, itinerary
+日历|rìlì|calendar
+日期|rìqī|date
+日用品|rìyòngpǐn|articles for daily use
+荣幸|róngxìng|honored (to have the privilege of ...)
+荣誉|róngyù|honor, credit, glory
+融化|rónghuà|to melt, to thaw, to dissolve
+如何|rúhé|how, what way, what
+如今|rújīn|nowadays, now
+软件|ruǎnjiàn|(computer) software
+弱|ruò|weak; feeble, young, inferior; not as good as
+洒|sǎ|to sprinkle, to spray, to spill
+嗓子|sǎngzi|throat, voice
+杀|shā|to kill, to murder, to attack
+沙漠|shāmò|desert
+沙滩|shātān|beach, sandy shore
+傻|shǎ|foolish
+晒|shài|(of the sun) to shine on, to bask in (the sunshine)
+删除|shānchú|to delete, to cancel
+闪电|shǎndiàn|lightning
+扇子|shànzi|fan
+善良|shànliáng|good and honest, kindhearted
+善于|shànyú|to be good at; to be adept at
+商品|shāngpǐn|commodity, goods, merchandise
+商业|shāngyè|business, trade, commerce
+上当|shàngdàng|taken in (by sb's deceit), to be fooled, to be duped
+舌头|shétou|tongue, enemy soldier captured for the purpose of extracting
+蛇|shé|snake, serpent
+舍不得|shěbude|to hate to do sth, to hate to part with, to begrudge
+设备|shèbèi|equipment; facilities; installations
+设计|shèjì|to design; to plan, design; plan
+设施|shèshī|facilities, installation
+射击|shèjī|to shoot, to fire (a gun)
+摄影|shèyǐng|to take a photograph, photography, to shoot (a movie)
+伸|shēn|to stretch, to extend
+身材|shēncái|stature, build (height and weight), figure
+身份|shēnfèn|identity, aspect of one's identity, role
+深刻|shēnkè|profound, deep, deep-going
+神话|shénhuà|legend, fairy tale, myth
+神经|shénjīng|nerve, mental state, (coll.) unhinged
+神秘|shénmì|mysterious, mystery
+升|shēng|to ascend, to rise to the rank of, to promote
+生产|shēngchǎn|to produce; to manufacture, to give birth to a child
+生动|shēngdòng|vivid, lively
+声调|shēngdiào|tone, note, a tone (on a Chinese syllable)
+绳子|shéngzi|cord; string; rope
+省略|shěnglüè|to leave out, an omission
+胜利|shènglì|victory
+失眠|shīmián|to suffer from insomnia
+失去|shīqù|to lose
+失业|shīyè|unemployment, to lose one's job
+诗|shī|poem, poetry, verse
+石头|shítou|stone
+时代|shídài|age, era, epoch
+时刻|shíkè|time, juncture, moment
+时髦|shímáo|in vogue, fashionable
+时期|shíqī|period, phase
+时尚|shíshàng|fashion, fad, fashionable
+实话|shíhuà|truth
+实践|shíjiàn|practice, to put into practice, to live up to (a promise)
+实习|shíxí|to practice, field work, to intern
+实现|shíxiàn|to achieve, to implement, to realize
+实行|shíxíng|to implement, to carry out, to put into practice
+实验|shíyàn|experiment, test, experimental
+实用|shíyòng|practical, functional, pragmatic
+食物|shíwù|food
+使劲儿|shǐjìnr|erhua variant of 使劲, to exert all one's strength
+始终|shǐzhōng|from beginning to end, all along
+士兵|shìbīng|soldier
+似的|shìde|seems as if, rather like, Taiwan pr. [sì de]
+似乎|sìhū|it seems; seemingly; as if
+事实|shìshí|fact
+事物|shìwù|thing; object
+事先|shìxiān|in advance, before the event, beforehand
+试卷|shìjuàn|examination paper, test paper
+收获|shōuhuò|to harvest, to reap, to gain
+收据|shōujù|receipt
+手工|shǒugōng|handwork, manual
+手术|shǒushù|(surgical) operation, surgery
+手套|shǒutào|glove, mitten
+手续|shǒuxù|procedure, formalities
+手指|shǒuzhǐ|finger
+寿命|shòumìng|life span, life expectancy, lifetime (of a machine)
+受伤|shòushāng|to sustain injuries, wounded (in an accident etc), harmed
+书架|shūjià|bookshelf
+梳子|shūzi|comb
+舒适|shūshì|cozy, snug
+输入|shūrù|to import, to input
+蔬菜|shūcài|vegetables
+熟练|shúliàn|practiced, proficient, skilled
+属于|shǔyú|to be classified as, to belong to, to be part of
+鼠标|shǔbiāo|mouse (computing)
+数据|shùjù|data
+数码|shùmǎ|number, numerals, figures
+摔|shuāi|to throw down, to fall, to drop and break
+甩|shuǎi|to throw, to fling, to swing
+双方|shuāngfāng|bilateral, both sides, both parties involved
+税|shuì|taxes, duties
+说不定|shuōbudìng|can't say for sure, maybe
+说服|shuōfú|to persuade, to convince, to talk sb over
+丝绸|sīchóu|silk cloth, silk
+丝毫|sīháo|the slightest amount or degree, a bit
+私人|sīrén|private, personal, interpersonal
+思考|sīkǎo|to reflect on, to ponder over
+思想|sīxiǎng|thought, thinking, idea
+撕|sī|to tear
+寺庙|sìmiào|temple, monastery, shrine
+宿舍|sùshè|dormitory, dorm room, living quarters
+随时|suíshí|at any time; at all times, at the right time; whenever necessary
+碎|suì|(transitive or intransitive verb) to break into pieces; to
+损失|sǔnshī|loss, damage, to lose
+缩短|suōduǎn|to curtail, to cut down
+缩小|suōxiǎo|to reduce, to decrease, to shrink
+所|suǒ|actually, place
+所谓|suǒwèi|so-called, what is called
+锁|suǒ|to lock; to lock up, a lock
+塔|tǎ|pagoda, tower, minaret
+台阶|táijiē|steps, flight of steps, step (over obstacle)
+太极拳|tàijíquán|shadowboxing or Taiji, T'aichi or T'aichichuan
+太太|tàitai|married woman, Mrs., Madam
+谈判|tánpàn|to negotiate, negotiation, talks
+坦率|tǎnshuài|frank (discussion), blunt, open
+烫|tàng|to scald, to burn (by scalding), to blanch (cooking)
+逃|táo|to escape, to run away, to flee
+逃避|táobì|to escape, to evade, to avoid
+桃|táo|peach
+套|tào|to cover, to encase, cover
+特殊|tèshū|special, particular, unusual
+特意|tèyì|specially, intentionally
+特征|tèzhēng|characteristic, diagnostic property, distinctive feature
+疼爱|téng'ài|to love dearly
+提|dī|used in 防 and 溜
+提倡|tíchàng|to promote, to advocate
+提纲|tígāng|outline, synopsis, notes
+提问|tíwèn|to question; to quiz; to grill
+题目|tímù|subject, title, topic
+体会|tǐhuì|to know from experience, to learn through experience, to realize
+体积|tǐjī|volume, bulk
+体贴|tǐtiē|considerate (of other people's needs)
+体现|tǐxiàn|to embody, to reflect, to incarnate
+体验|tǐyàn|to experience for oneself
+天空|tiānkōng|sky
+天真|tiānzhēn|naive, innocent, artless
+田野|tiányě|field, open land
+挑战|tiǎozhàn|to challenge, challenge
+通常|tōngcháng|regular, usual, normal
+通讯|tōngxùn|communications, news story, dispatch
+同时|tóngshí|at the same time, simultaneously
+铜|tóng|copper (chemistry)
+统治|tǒngzhì|to rule (a country), to govern, rule
+痛苦|tòngkǔ|pain, suffering, painful
+痛快|tòngkuài|delighted, to one's heart's content, straightforward
+投资|tóuzī|investment, to invest
+透明|tòumíng|transparent, (fig.) transparent; open to scrutiny
+土地|tǔdì|land, soil, territory
+土豆|tǔdòu|potato, (Tw) peanut
+吐|tǔ|to spit, to send out, to say
+兔子|tùzi|hare, rabbit
+团|tuán|round, lump, ball
+推辞|tuīcí|to decline (an appointment, invitation etc)
+推广|tuīguǎng|to extend, to spread, to popularize
+推荐|tuījiàn|to recommend, recommendation
+退|tuì|to retreat; to withdraw, to reject; to return (sth), to decline
+退步|tuìbù|to do less well than before, to make a concession, setback
+退休|tuìxiū|to retire (from the workforce); to go into retirement
+歪|wāi|askew, at a crooked angle, devious
+外交|wàijiāo|diplomacy, diplomatic, foreign affairs
+弯|wān|to bend, bent, a bend; a turn (in a road etc)
+完美|wánměi|perfect
+完善|wánshàn|(of systems, facilities etc) comprehensive, well-developed
+完整|wánzhěng|complete, intact
+玩具|wánjù|plaything, toy
+万一|wànyī|just in case, if by any chance, contingency
+王子|wángzǐ|prince, son of a king
+往返|wǎngfǎn|to go back and forth; to go to and fro; to do a round trip
+危害|wēihài|to jeopardize, to harm, to endanger
+威胁|wēixié|to threaten; to menace
+微笑|wēixiào|smile, to smile
+围巾|wéijīn|scarf, shawl
+围绕|wéirào|to revolve around, to center on (an issue)
+违反|wéifǎn|to violate (a law)
+唯一|wéiyī|only; sole
+维护|wéihù|to defend, to safeguard, to protect
+伟大|wěidà|huge; great; grand; worthy of the greatest admiration;
+尾巴|wěiba|tail, colloquial pr. [yǐ ba]
+委屈|wěiqu|to feel wronged, to cause sb to feel wronged, grievance
+委托|wěituō|to entrust, to trust, to commission
+未必|wèibì|not necessarily, maybe not
+未来|wèilái|future, tomorrow, approaching
+位置|wèizhi|position, place, seat
+胃|wèi|stomach
+温暖|wēnnuǎn|warm
+温柔|wēnróu|gentle and soft; tender; sweet
+文件|wénjiàn|document, file
+文具|wénjù|stationery, item of stationery
+文明|wénmíng|civilized, civilization, culture
+文学|wénxué|literature
+闻|wén|to hear, news, well-known
+吻|wěn|kiss, to kiss, mouth
+稳定|wěndìng|steady, stable, stability
+问候|wènhòu|to give one's respects, to send a greeting
+卧室|wòshì|bedroom
+屋子|wūzi|house, room
+无奈|wúnài|to have no alternative, frustrated, exasperated
+无数|wúshù|countless, numberless, innumerable
+武器|wǔqì|weapon, arms
+武术|wǔshù|military skill or technique (in former times)
+物理|wùlǐ|physics, physical
+物质|wùzhì|matter, substance, material
+雾|wù|fog, mist
+吸收|xīshōu|to absorb, to assimilate, to ingest
+戏剧|xìjù|a drama; a play; theater, script of a play
+系|xì|to connect, to relate to, to tie up
+系领带|xìlǐngdài|to wear a tie
+系统|xìtǒng|system
+细节|xìjié|details, particulars
+瞎|xiā|blind, groundlessly, foolishly
+下载|xiàzǎi|to download, also pr. [xià zài]
+吓|hè|to scare, to intimidate, to threaten
+鲜艳|xiānyàn|bright-colored; gaily-colored
+显得|xiǎnde|to seem, to look, to appear
+显然|xiǎnrán|clearly; evidently; obviously
+显示|xiǎnshì|to show, to illustrate, to display
+县|xiàn|county
+现实|xiànshí|reality, actuality, real
+现象|xiànxiàng|phenomenon, appearance
+相处|xiāngchǔ|to be in contact (with sb), to associate, to interact
+相当|xiāngdāng|equivalent to, appropriate, considerably
+相对|xiāngduì|relatively, opposite, to resist
+相关|xiāngguān|related, relevant, pertinent
+相似|xiāngsì|similar; alike
+享受|xiǎngshòu|to enjoy, to live it up, pleasure
+想念|xiǎngniàn|to miss, to remember with longing, to long to see again
+想象|xiǎngxiàng|to imagine; to envision, imagination
+项|xiàng|back of neck, item, thing
+项链|xiàngliàn|necklace
+项目|xiàngmù|item, project, (sports) event
+象棋|xiàngqí|Chinese chess
+象征|xiàngzhēng|emblem, symbol, token
+消费|xiāofèi|to consume, to spend
+消化|xiāohuà|to digest (food)
+消灭|xiāomiè|to put an end to, to annihilate, to cause to perish
+消失|xiāoshī|to disappear; to fade away
+销售|xiāoshòu|to sell, to market, sales (representative, agreement etc)
+小伙子|xiǎohuǒzi|young man, young guy, lad
+小麦|xiǎomài|wheat
+小气|xiǎoqì|stingy, miserly, narrow-minded
+小偷|xiǎotōu|thief
+孝顺|xiàoshùn|filial, dutiful, devoted to one's parents (and grandparents etc)
+效率|xiàolǜ|efficiency
+歇|xiē|to rest, to take a break, to stop
+协调|xiétiáo|to coordinate, to harmonize, to fit together
+斜|xié|inclined, slanting, oblique
+心理|xīnlǐ|psychology, mentality
+心脏|xīnzàng|heart
+欣赏|xīnshǎng|to appreciate; to enjoy; to admire
+信号|xìnhào|signal
+行动|xíngdòng|operation, action, to move about
+行人|xíngrén|pedestrian, traveler on foot, passer-by
+行为|xíngwéi|action, conduct, behavior
+行业|hángyè|trade; profession; industry; business
+形成|xíngchéng|to form, to take shape
+形容|xíngróng|to describe, (literary) countenance; appearance
+形式|xíngshì|outer appearance, form, shape
+形势|xíngshì|circumstances, situation, terrain
+形象|xíngxiàng|image, form, figure
+形状|xíngzhuàng|form; shape
+幸亏|xìngkuī|fortunately, luckily
+幸运|xìngyùn|fortunate, lucky, fortune
+性质|xìngzhì|nature, characteristic
+兄弟|xiōngdì|brothers, younger brother
+胸|xiōng|chest, bosom, heart
+雄伟|xióngwěi|grand, imposing, magnificent
+休闲|xiūxián|leisure, relaxation, not working
+修改|xiūgǎi|to amend, to alter, to modify
+虚心|xūxīn|open-minded, humble
+叙述|xùshù|to relate (a story or information), to tell or talk about, to recount
+宣布|xuānbù|to declare, to announce, to proclaim
+宣传|xuānchuán|to disseminate, to give publicity to, propaganda
+选举|xuǎnjǔ|to elect, election
+学术|xuéshù|learning, science, academic
+学问|xuéwèn|learning, knowledge
+寻找|xúnzhǎo|to seek; to look for
+询问|xúnwèn|to inquire
+迅速|xùnsù|rapid, speedy, fast
+训练|xùnliàn|to train, to drill, training
+延长|yáncháng|to prolong, to extend, to delay
+严肃|yánsù|solemn, grave, serious
+宴会|yànhuì|banquet, feast, dinner party
+阳台|yángtái|balcony, porch
+痒|yǎng|variant of 痒, to itch, to tickle
+样式|yàngshì|type, style
+腰|yāo|waist, lower back, pocket
+摇|yáo|to shake, to rock, to row
+咬|yǎo|to bite, to nip
+要不|yàobù|otherwise, or else, how about...?
+业务|yèwù|business, professional work, service
+业余|yèyú|in one's spare time, outside working hours, amateur (historian etc)
+夜|yè|night
+液体|yètǐ|liquid
+一辈子|yībèizi|(for) a lifetime
+一旦|yīdàn|in case (sth happens), if, once (sth happens, then...)
+一路|yīlù|the whole journey, all the way, going the same way
+一致|yīzhì|unanimous, identical (views or opinions)
+依然|yīrán|still, as before
+移动|yídòng|to move, movement, migration
+移民|yímín|to immigrate, to migrate, emigrant
+遗憾|yíhàn|regret, to regret, to be sorry that
+疑问|yíwèn|question, interrogation, doubt
+乙|yǐ|second of the ten Heavenly Stems 干, second in order
+以及|yǐjí|as well as, too, and
+义务|yìwù|duty, obligation, volunteer (work etc)
+议论|yìlùn|to comment, to talk about, to discuss
+意外|yìwài|unexpected, accident, mishap
+意义|yìyì|sense, meaning, significance
+因而|yīn'ér|therefore, as a result, thus
+因素|yīnsù|element, factor
+银|yín|silver, silver-colored, relating to money or currency
+应付|yìngfu|to deal with, to cope
+应用|yìngyòng|to put to use, to apply, practical
+英俊|yīngjùn|handsome
+英雄|yīngxióng|hero
+迎接|yíngjiē|to welcome; to greet
+营养|yíngyǎng|nutrition, nourishment
+营业|yíngyè|to do business, to trade
+影子|yǐngzi|shadow, reflection, (fig.) hint
+硬币|yìngbì|coin
+硬件|yìngjiàn|hardware
+拥抱|yōngbào|to embrace, to hug
+拥挤|yōngjǐ|crowded, to throng, congestion
+勇气|yǒngqì|courage, valor
+用途|yòngtú|use; application
+优惠|yōuhuì|privilege, favorable (terms), preferential (treatment)
+优美|yōuměi|graceful, fine, elegant
+优势|yōushì|superiority, dominance, advantage
+悠久|yōujiǔ|long (tradition, history etc)
+犹豫|yóuyù|to hesitate
+油炸|yóuzhá|to deep fry
+游览|yóulǎn|to go sightseeing, to tour, to visit
+有利|yǒulì|advantageous; favorable
+幼儿园|yòu'éryuán|kindergarten, nursery school
+娱乐|yúlè|to entertain, to amuse, entertainment
+与其|yǔqí|rather than..., 与其 A 如 B (rather than A, better to B)
+宇宙|yǔzhòu|universe, cosmos
+语气|yǔqì|tone, manner of speaking, mood
+玉米|yùmǐ|corn, maize
+预报|yùbào|forecast
+预订|yùdìng|to place an order, to book ahead
+预防|yùfáng|to prevent, to take precautions against, to protect
+元旦|Yuándàn|New Year's Day
+原料|yuánliào|raw material
+原则|yuánzé|principle, doctrine
+缘故|yuángù|reason, cause
+愿望|yuànwàng|desire, wish
+晕|yūn|confused, dizzy, giddy
+运气|yùnqi|luck (good or bad)
+运输|yùnshū|to transport, to carry, transportation
+运用|yùnyòng|to use, to put to use
+灾害|zāihài|calamity, disaster
+再三|zàisān|over and over again, again and again
+赞成|zànchéng|to approve, to endorse, (literary) to assist
+赞美|zànměi|to admire, to praise, to eulogize
+糟糕|zāogāo|too bad, how terrible, what bad luck
+造成|zàochéng|to bring about, to create, to cause
+则|zé|(literary) (conjunction used to express contrast with a
+责备|zébèi|to blame, to criticize, condemnation
+摘|zhāi|to take, to borrow, to pick (flowers, fruit etc)
+粘贴|zhāntiē|to stick, to affix, to adhere
+展开|zhǎnkāi|to unfold; to spread out; to open up, to launch; to carry out
+展览|zhǎnlǎn|to put on display, to exhibit, exhibition
+战争|zhànzhēng|war, conflict
+长途|chángtú|long distance
+涨|zhǎng|to rise (of prices, rivers)
+掌握|zhǎngwò|to grasp (often fig.), to control
+账户|zhànghù|bank account, online account
+招待|zhāodài|to hold a reception; to offer hospitality; to entertain
+召开|zhàokāi|to convene (a conference or meeting), to convoke, to call together
+照常|zhàocháng|as usual
+哲学|zhéxué|philosophy
+着凉|zháoliáng|to catch cold, Taiwan pr. [zhāo liáng]
+针对|zhēnduì|to target, to focus on, to be aimed at or against
+珍惜|zhēnxī|to treasure, to value, to cherish
+真理|zhēnlǐ|truth
+真实|zhēnshí|true; real
+诊断|zhěnduàn|to diagnose
+枕头|zhěntou|pillow
+阵|zhèn|disposition of troops, wave, spate
+振动|zhèndòng|to vibrate, to shake, vibration
+争论|zhēnglùn|to argue, to debate, to contend
+争取|zhēngqǔ|to fight for, to strive for, to win over
+征求|zhēngqiú|to solicit, to seek, to request (opinions, feedback etc)
+挣钱|zhèngqián|to make money
+睁|zhēng|to open (one's eyes)
+整个|zhěnggè|whole, entire, total
+整体|zhěngtǐ|whole entity, entire body, synthesis
+正|zhēng|first month of the lunar year
+证件|zhèngjiàn|certificate; papers; credentials; document; ID
+证据|zhèngjù|evidence, proof, testimony
+政策|zhèngcè|policy
+政府|zhèngfǔ|government
+政治|zhèngzhì|politics, political
+支|zhī|to support, to sustain, to erect
+支票|zhīpiào|check (bank), cheque
+执行|zhíxíng|to implement, to carry out, to execute
+执照|zhízhào|license, permit
+直|zhí|straight, to straighten, fair and reasonable
+指导|zhǐdǎo|to guide, to give directions, to direct
+指挥|zhǐhuī|to conduct, to command, to direct
+至今|zhìjīn|so far, to this day, until now
+至于|zhìyú|as for, as to, to go so far as to
+制定|zhìdìng|to draw up; to formulate
+制度|zhìdù|system (e.g. political, adminstrative etc), institution
+制作|zhìzuò|to make; to manufacture
+治疗|zhìliáo|to treat (an illness), medical treatment, therapy
+秩序|zhìxù|order (orderly), order (sequence), social order
+智慧|zhìhuì|wisdom, knowledge, intelligent
+中介|zhōngjiè|to act as intermediary, to link, intermediate
+中心|zhōngxīn|center, heart, core
+中旬|zhōngxún|middle third of a month
+钟|zhōng|handleless cup, goblet, to concentrate
+重|chóng|to repeat, repetition, again
+重复|chóngfù|to repeat, to duplicate
+重量|zhòngliàng|weight
+周到|zhōudào|thoughtful, considerate, attentive
+竹子|zhúzi|bamboo
+逐步|zhúbù|progressively, step by step
+主持|zhǔchí|to take charge of, to manage or direct, to preside over
+主观|zhǔguān|subjective
+主人|zhǔrén|master, host, owner
+主席|zhǔxí|chairperson, premier, chairman
+主张|zhǔzhāng|to advocate, to stand for, view
+煮|zhǔ|to cook, to boil
+嘱咐|zhǔfù|to tell, to exhort, injunction
+注册|zhùcè|to register, to enroll
+祝福|zhùfú|blessings, to wish sb well
+抓紧|zhuājǐn|to keep a firm grip on, to pay close attention to
+专家|zhuānjiā|expert; specialist
+专心|zhuānxīn|to focus one's attention; to concentrate on (doing sth)
+转变|zhuǎnbiàn|to change, to transform, shift
+转告|zhuǎngào|to pass on, to communicate, to transmit
+装|zhuāng|adornment, to adorn, dress
+装饰|zhuāngshì|to decorate, decoration, decorative
+状况|zhuàngkuàng|condition; state; situation
+状态|zhuàngtài|condition; state; state of affairs
+追求|zhuīqiú|to pursue (a goal etc) stubbornly, to seek after, to woo
+咨询|zīxún|to consult, to seek advice, consultation
+姿势|zīshì|posture, position
+资格|zīgé|qualifications, seniority
+资金|zījīn|funds; capital
+资料|zīliào|material, resources, data
+资源|zīyuán|natural resource (such as water or minerals)
+紫|zǐ|purple, violet
+字幕|zìmù|caption, subtitle
+自从|zìcóng|since (a time), ever since
+自动|zìdòng|automatic, voluntarily
+自豪|zìháo|proud (of one's achievements etc)
+自觉|zìjué|conscious, aware, on one's own initiative
+自私|zìsī|selfish, selfishness
+自由|zìyóu|freedom; liberty, free; unrestricted
+自愿|zìyuàn|voluntary
+宗教|zōngjiào|religion
+综合|zōnghé|comprehensive, composite, synthesized
+总裁|zǒngcái|chairman, director-general (of a company etc)
+总共|zǒnggòng|altogether; in sum; in all; in total
+总理|zǒnglǐ|premier, prime minister
+总算|zǒngsuàn|at long last, finally, on the whole
+总统|zǒngtǒng|president (of a country)
+总之|zǒngzhī|in a word, in short, in brief
+阻止|zǔzhǐ|to prevent, to block
+组合|zǔhé|to assemble, to combine, to compose
+祖国|zǔguó|motherland
+祖先|zǔxiān|ancestors; forebears
+最初|zuìchū|first, primary, initial
+罪犯|zuìfàn|criminal
+醉|zuì|intoxicated
+尊敬|zūnjìng|to respect; to revere; to esteem, honorable; distinguished
+遵守|zūnshǒu|to comply with; to abide by; to respect (an agreement)
+作品|zuòpǐn|work (of art), opus
+作为|zuòwéi|one's conduct, deed, activity
+作文|zuòwén|to write an essay, composition (student essay)`
+  };
+
+  var CARDS = [];
+  var TOTAL = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  [1, 2, 3, 4, 5].forEach(function (lv) {
+    RAW[lv].split('\n').forEach(function (line) {
+      var p = line.split('|');
+      if (p.length < 3) return;
+      CARDS.push({ id: p[0].trim() + '|' + p[1].trim(), hz: p[0].trim(), py: p[1].trim(), en: p.slice(2).join('|').trim(), lv: lv });
+      TOTAL[lv]++;
+    });
+  });
+
+  // ---------- saved state ----------
+  var KEY = 'hsk13-flashcards-v1';
+  var known = new Set();
+  var prefs = { levels: [1, 2, 3, 4, 5], dir: 'zh', skip: true, shuffle: true };
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+    if (Array.isArray(saved.known)) saved.known.forEach(function (k) { known.add(k); });
+    if (Array.isArray(saved.levels) && saved.levels.length) prefs.levels = saved.levels.filter(function (l) { return TOTAL[l]; });
+    if (!prefs.levels.length) prefs.levels = [1, 2, 3, 4, 5];
+    if (saved.v !== 2 && saved.v !== 3 && prefs.levels.indexOf(4) < 0) prefs.levels.push(4);
+    if ((saved.v || 0) < 3 && prefs.levels.indexOf(5) < 0) prefs.levels.push(5);
+    if (saved.dir === 'en' || saved.dir === 'zh') prefs.dir = saved.dir;
+    if (typeof saved.skip === 'boolean') prefs.skip = saved.skip;
+    if (typeof saved.shuffle === 'boolean') prefs.shuffle = saved.shuffle;
+  } catch (e) { /* storage unavailable: start fresh */ }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ v: 3, known: Array.from(known), levels: prefs.levels, dir: prefs.dir, skip: prefs.skip, shuffle: prefs.shuffle }));
+    } catch (e) { /* ignore */ }
+  }
+
+  // ---------- helpers ----------
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function isZh(ch) { return /[一-鿿]/.test(ch); }
+
+  var V = 'aāáǎàeēéěèiīíǐìoōóǒòuūúǔùüǖǘǚǜ';
+  var SYL = new RegExp('(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])?[' + V + ']+(?:ng(?![' + V + '])|nr(?![' + V + '])|n(?![' + V + '])|r(?![' + V + ']))?', 'gi');
+  function tone(s) {
+    var d = s.normalize('NFD');
+    if (/̄/.test(d)) return 1;
+    if (/́/.test(d)) return 2;
+    if (/̌/.test(d)) return 3;
+    if (/̀/.test(d)) return 4;
+    return 5;
+  }
+  function pinyinHTML(py) {
+    var out = '', last = 0, m;
+    SYL.lastIndex = 0;
+    while ((m = SYL.exec(py))) {
+      out += esc(py.slice(last, m.index)) + '<span class="t' + tone(m[0]) + '">' + esc(m[0]) + '</span>';
+      last = m.index + m[0].length;
+    }
+    return out + esc(py.slice(last));
+  }
+  function cellsHTML(hz) {
+    var chars = Array.from(hz.replace(/\.\.\./g, '…'));
+    var n = chars.filter(isZh).length;
+    var hasSep = chars.some(function (c) { return !isZh(c) && c.trim(); });
+    var px = n <= 1 ? 132 : n === 2 ? 112 : n === 3 ? 88 : (hasSep ? 52 : 62);
+    if (n > 4) px = 48;
+    var h = '<div class="cells" style="--cell:' + px + 'px">';
+    chars.forEach(function (ch) {
+      if (isZh(ch)) h += '<span class="cell"><span class="g">' + ch + '</span></span>';
+      else if (ch.trim()) h += '<span class="sep">' + esc(ch) + '</span>';
+    });
+    return h + '</div>';
+  }
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // ---------- session ----------
+  var sess = null;
+  var flipped = false;
+
+  function build() {
+    return CARDS.filter(function (c) {
+      return prefs.levels.indexOf(c.lv) > -1 && !(prefs.skip && known.has(c.id));
+    });
+  }
+  function start(list) {
+    var cards = (list || build()).slice();
+    if (prefs.shuffle) shuffle(cards);
+    sess = { queue: cards, total: cards.length, got: 0, again: 0, missed: {} };
+    setFlipped(false, true);
+    renderAll();
+  }
+  function setFlipped(v, snap) {
+    flipped = v;
+    var card = $('card');
+    if (snap) card.classList.add('snap');
+    card.classList.toggle('flipped', v);
+    $('front').setAttribute('aria-hidden', v ? 'true' : 'false');
+    $('back').setAttribute('aria-hidden', v ? 'false' : 'true');
+    if (snap) { void card.offsetWidth; card.classList.remove('snap'); }
+  }
+  function flip() { if (sess && sess.queue.length) setFlipped(!flipped, false); }
+  function grade(ok) {
+    if (!sess || !sess.queue.length) return;
+    var c = sess.queue.shift();
+    if (ok) { known.add(c.id); sess.got++; }
+    else {
+      known.delete(c.id);
+      sess.again++;
+      sess.missed[c.id] = c;
+      sess.queue.splice(Math.min(4, sess.queue.length), 0, c);
+    }
+    save();
+    setFlipped(false, true);
+    renderAll();
+  }
+
+  // ---------- render ----------
+  var levelsEl = $('levels');
+  var chipEls = {};
+  [1, 2, 3, 4, 5].forEach(function (lv) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.innerHTML = '<b>HSK ' + lv + '</b><small></small><span class="bar"><i></i></span>';
+    b.addEventListener('click', function () {
+      var i = prefs.levels.indexOf(lv);
+      if (i > -1) { if (prefs.levels.length > 1) prefs.levels.splice(i, 1); }
+      else prefs.levels.push(lv);
+      prefs.levels.sort();
+      save();
+      start();
+    });
+    levelsEl.appendChild(b);
+    chipEls[lv] = b;
+  });
+
+  function renderChips() {
+    var counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    CARDS.forEach(function (c) { if (known.has(c.id)) counts[c.lv]++; });
+    [1, 2, 3, 4, 5].forEach(function (lv) {
+      var b = chipEls[lv];
+      b.setAttribute('aria-pressed', prefs.levels.indexOf(lv) > -1 ? 'true' : 'false');
+      b.querySelector('small').textContent = counts[lv] + ' / ' + TOTAL[lv] + ' known';
+      b.querySelector('i').style.width = (TOTAL[lv] ? counts[lv] / TOTAL[lv] * 100 : 0) + '%';
+    });
+  }
+
+  function renderCard() {
+    var c = sess.queue[0];
+    var tag = '<div class="tag">HSK ' + c.lv + '</div>';
+    var hint = '<div class="hint">Tap to reveal</div>';
+    if (prefs.dir === 'zh') {
+      $('front').innerHTML = tag + cellsHTML(c.hz) + hint;
+      $('back').innerHTML = tag + '<div class="zh-sm">' + esc(c.hz.replace(/\.\.\./g, '…')) + '</div><div class="py">' + pinyinHTML(c.py) + '</div><div class="mean">' + esc(c.en) + '</div>';
+    } else {
+      $('front').innerHTML = tag + '<div class="mean big">' + esc(c.en) + '</div>' + hint;
+      $('back').innerHTML = tag + cellsHTML(c.hz) + '<div class="py">' + pinyinHTML(c.py) + '</div>';
+    }
+  }
+
+  function doneButton(label, cls, fn) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn ' + cls;
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    return b;
+  }
+  function renderDone() {
+    var d = $('done');
+    d.innerHTML = '';
+    var h = document.createElement('h2');
+    var p = document.createElement('p');
+    var row = document.createElement('div');
+    row.className = 'row';
+    if (sess.total === 0) {
+      h.textContent = 'Nothing left to practice here';
+      p.textContent = 'Every word in the selected levels is marked as known.';
+      row.appendChild(doneButton('Include known words', 'solid', function () { prefs.skip = false; save(); start(); }));
+    } else {
+      var missed = Object.keys(sess.missed).map(function (k) { return sess.missed[k]; });
+      h.textContent = 'Session complete';
+      p.textContent = sess.total + (sess.total === 1 ? ' word' : ' words') + ' reviewed, ' + (missed.length ? missed.length + ' needed another look.' : 'none needed another look.');
+      if (missed.length) row.appendChild(doneButton('Drill ' + missed.length + ' missed', 'solid', function () { start(missed); }));
+      row.appendChild(doneButton('Practice again', missed.length ? '' : 'solid', function () { start(); }));
+    }
+    d.appendChild(h); d.appendChild(p); d.appendChild(row);
+  }
+
+  function renderAll() {
+    renderChips();
+    $('dirZh').setAttribute('aria-pressed', prefs.dir === 'zh' ? 'true' : 'false');
+    $('dirEn').setAttribute('aria-pressed', prefs.dir === 'en' ? 'true' : 'false');
+    $('skip').checked = prefs.skip;
+    $('shuf').checked = prefs.shuffle;
+    $('nLeft').textContent = sess.queue.length;
+    $('nGot').textContent = sess.got;
+    $('nAgain').textContent = sess.again;
+    $('prog').style.width = (sess.total ? sess.got / sess.total * 100 : 0) + '%';
+    var live = sess.queue.length > 0;
+    $('stage').hidden = !live;
+    $('actions').hidden = !live;
+    $('done').hidden = live;
+    if (live) renderCard(); else renderDone();
+  }
+
+  // ---------- speech ----------
+  var canSpeak = false;
+  try { canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function'; } catch (e) { canSpeak = false; }
+  if (canSpeak) $('speak').hidden = false;
+  $('speak').addEventListener('click', function () {
+    if (!sess || !sess.queue.length) return;
+    try {
+      var text = sess.queue[0].hz.replace(/[^一-鿿]+/g, ' ').trim();
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = 0.85;
+      speechSynthesis.speak(u);
+    } catch (e) { /* speech not available */ }
+  });
+
+  // ---------- events ----------
+  $('card').addEventListener('click', flip);
+  $('again').addEventListener('click', function () { grade(false); });
+  $('got').addEventListener('click', function () { grade(true); });
+  $('dirZh').addEventListener('click', function () { prefs.dir = 'zh'; save(); start(); });
+  $('dirEn').addEventListener('click', function () { prefs.dir = 'en'; save(); start(); });
+  $('skip').addEventListener('change', function (e) { prefs.skip = e.target.checked; save(); start(); });
+  $('shuf').addEventListener('change', function (e) { prefs.shuffle = e.target.checked; save(); start(); });
+
+  var resetTimer = null;
+  $('reset').addEventListener('click', function () {
+    var b = $('reset');
+    if (!resetTimer) {
+      b.textContent = 'Tap again to clear all known words';
+      resetTimer = setTimeout(function () { resetTimer = null; b.textContent = 'Reset progress'; }, 4000);
+      return;
+    }
+    clearTimeout(resetTimer);
+    resetTimer = null;
+    b.textContent = 'Reset progress';
+    known.clear();
+    save();
+    start();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    var onCard = t && t.id === 'card';
+    if (t && t !== document.body && !onCard && t.closest && t.closest('button, input, select, textarea')) return;
+    if (e.key === ' ' || (e.key === 'Enter' && onCard)) { e.preventDefault(); flip(); }
+    else if (e.key === '1') grade(false);
+    else if (e.key === '2') grade(true);
+  });
+
+  $('sub').textContent = CARDS.length + ' words from the HSK 2.0 lists. Progress is saved in this browser.';
+  start();
+})();
+</script>
 </body>
 </html>
