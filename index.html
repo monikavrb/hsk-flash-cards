@@ -169,6 +169,20 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
 .tones .s { font-family: var(--font-py); font-weight: 600; font-size: 18px; }
 .link { background: none; border: 0; padding: 8px 0; cursor: pointer; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
 .keys { font-size: 12px; color: var(--ink-2); }
+/* Study / Review tabs */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tabs button {
+  min-height: 46px; border-radius: 12px; border: 1.5px solid var(--line); background: transparent; color: var(--ink-2);
+  font-weight: 700; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.tabs button[aria-selected="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.tabs .badge {
+  min-width: 22px; padding: 1px 7px; border-radius: 11px; font-size: 12px; font-variant-numeric: tabular-nums;
+  background: var(--bad); color: #fff;
+}
+.tabs .badge[hidden] { display: none; }
+.support { margin: 0; text-align: center; font-size: 13px; color: var(--ink-2); }
+.support a { color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
 @media (pointer: coarse) { .keys { display: none; } }
 @media (prefers-reduced-motion: reduce) { .card-inner, .bar > i { transition: none; } }
 @media (max-width: 380px) { .py { font-size: 26px; } .mean.big { font-size: 26px; } }
@@ -181,6 +195,11 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     <p class="sub" id="sub"></p>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" id="tabStudy" aria-selected="true">Study</button>
+    <button type="button" role="tab" id="tabReview" aria-selected="false">Review <span class="badge" id="revCount" hidden>0</span></button>
+  </nav>
+
   <section class="levels" id="levels" aria-label="Levels to practice"></section>
 
   <section class="opts">
@@ -188,7 +207,7 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
       <button type="button" id="dirZh" aria-pressed="true">汉字 → English</button>
       <button type="button" id="dirEn" aria-pressed="false">English → 汉字</button>
     </div>
-    <label class="sw" for="skip"><input type="checkbox" id="skip"> Skip known</label>
+    <label class="sw" for="skip" id="skipWrap"><input type="checkbox" id="skip"> Skip known</label>
     <label class="sw" for="shuf"><input type="checkbox" id="shuf"> Shuffle</label>
   </section>
 
@@ -228,6 +247,11 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     <span class="keys">Space flips · 1 again · 2 got it</span>
     <button type="button" class="link" id="reset">Reset progress</button>
   </footer>
+
+  <p class="support">
+    Free to use. If it helps your studying,
+    <a href="https://ko-fi.com/YOUR_KOFI_USERNAME" target="_blank" rel="noopener">buy me a coffee on Ko-fi ☕</a>
+  </p>
 </div>
 
 <script>
@@ -2696,13 +2720,16 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   // ---------- saved state ----------
   var KEY = 'hsk13-flashcards-v1';
   var known = new Set();
-  var prefs = { levels: [1, 2, 3, 4, 5], dir: 'zh', skip: true, shuffle: true };
+  var review = new Set();   // words marked "Again" in Study; practised in the Review tab
+  var prefs = { levels: [1, 2, 3, 4, 5], dir: 'zh', skip: true, shuffle: true, mode: 'study' };
   try {
     var saved = JSON.parse(localStorage.getItem(KEY) || '{}');
     if (Array.isArray(saved.known)) saved.known.forEach(function (k) { known.add(k); });
+    if (Array.isArray(saved.review)) saved.review.forEach(function (k) { review.add(k); });
+    if (saved.mode === 'review' || saved.mode === 'study') prefs.mode = saved.mode;
     if (Array.isArray(saved.levels) && saved.levels.length) prefs.levels = saved.levels.filter(function (l) { return TOTAL[l]; });
     if (!prefs.levels.length) prefs.levels = [1, 2, 3, 4, 5];
-    if (saved.v !== 2 && saved.v !== 3 && prefs.levels.indexOf(4) < 0) prefs.levels.push(4);
+    if ((saved.v || 0) < 2 && prefs.levels.indexOf(4) < 0) prefs.levels.push(4);
     if ((saved.v || 0) < 3 && prefs.levels.indexOf(5) < 0) prefs.levels.push(5);
     if (saved.dir === 'en' || saved.dir === 'zh') prefs.dir = saved.dir;
     if (typeof saved.skip === 'boolean') prefs.skip = saved.skip;
@@ -2710,7 +2737,7 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   } catch (e) { /* storage unavailable: start fresh */ }
   function save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ v: 3, known: Array.from(known), levels: prefs.levels, dir: prefs.dir, skip: prefs.skip, shuffle: prefs.shuffle }));
+      localStorage.setItem(KEY, JSON.stringify({ v: 4, known: Array.from(known), review: Array.from(review), mode: prefs.mode, levels: prefs.levels, dir: prefs.dir, skip: prefs.skip, shuffle: prefs.shuffle }));
     } catch (e) { /* ignore */ }
   }
 
@@ -2764,9 +2791,29 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   var flipped = false;
 
   function build() {
+    if (prefs.mode === 'review') {
+      // Review tab: only the words marked "Again", from any level
+      return CARDS.filter(function (c) { return review.has(c.id); });
+    }
+    // Study tab: words in the Review list are kept out, so they are only practised there
     return CARDS.filter(function (c) {
-      return prefs.levels.indexOf(c.lv) > -1 && !(prefs.skip && known.has(c.id));
+      return prefs.levels.indexOf(c.lv) > -1 && !review.has(c.id) && !(prefs.skip && known.has(c.id));
     });
+  }
+  var stash = {};   // the Study session is kept while you visit Review, and vice versa
+  function setMode(m) {
+    if (prefs.mode === m) return;
+    stash[prefs.mode] = sess;
+    prefs.mode = m;
+    save();
+    // Study resumes where you left off. Review is always rebuilt from the current list.
+    if (m === 'study' && stash.study) {
+      sess = stash.study;
+      setFlipped(false, true);
+      renderAll();
+    } else {
+      start();
+    }
   }
   function start(list) {
     var cards = (list || build()).slice();
@@ -2788,12 +2835,18 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   function grade(ok) {
     if (!sess || !sess.queue.length) return;
     var c = sess.queue.shift();
-    if (ok) { known.add(c.id); sess.got++; }
-    else {
+    if (ok) {
+      known.add(c.id);
+      review.delete(c.id);   // learned: leaves the Review list
+      sess.got++;
+    } else {
       known.delete(c.id);
+      review.add(c.id);      // goes to the Review tab
       sess.again++;
       sess.missed[c.id] = c;
-      sess.queue.splice(Math.min(4, sess.queue.length), 0, c);
+      // In Review the card comes back a few cards later until you get it.
+      // In Study it is simply moved to the Review tab and not shown again here.
+      if (prefs.mode === 'review') sess.queue.splice(Math.min(4, sess.queue.length), 0, c);
     }
     save();
     setFlipped(false, true);
@@ -2859,22 +2912,42 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     var p = document.createElement('p');
     var row = document.createElement('div');
     row.className = 'row';
-    if (sess.total === 0) {
+    if (prefs.mode === 'review') {
+      if (sess.total === 0) {
+        h.textContent = 'Nothing to review';
+        p.textContent = 'Words you mark "Again" in Study are collected here. Right now the list is empty.';
+      } else {
+        h.textContent = 'Review complete';
+        p.textContent = 'All ' + sess.total + (sess.total === 1 ? ' word' : ' words') + ' from your Review list are cleared.';
+      }
+      row.appendChild(doneButton('Back to Study', 'solid', function () { setMode('study'); }));
+    } else if (sess.total === 0) {
       h.textContent = 'Nothing left to practice here';
-      p.textContent = 'Every word in the selected levels is marked as known.';
-      row.appendChild(doneButton('Include known words', 'solid', function () { prefs.skip = false; save(); start(); }));
+      p.textContent = 'Every word in the selected levels is marked as known' + (review.size ? ' or waiting in your Review tab.' : '.');
+      if (review.size) row.appendChild(doneButton('Go to Review (' + review.size + ')', 'solid', function () { setMode('review'); }));
+      row.appendChild(doneButton('Include known words', review.size ? '' : 'solid', function () { prefs.skip = false; save(); start(); }));
     } else {
-      var missed = Object.keys(sess.missed).map(function (k) { return sess.missed[k]; });
+      var missed = Object.keys(sess.missed).length;
       h.textContent = 'Session complete';
-      p.textContent = sess.total + (sess.total === 1 ? ' word' : ' words') + ' reviewed, ' + (missed.length ? missed.length + ' needed another look.' : 'none needed another look.');
-      if (missed.length) row.appendChild(doneButton('Drill ' + missed.length + ' missed', 'solid', function () { start(missed); }));
-      row.appendChild(doneButton('Practice again', missed.length ? '' : 'solid', function () { start(); }));
+      p.textContent = sess.total + (sess.total === 1 ? ' word' : ' words') + ' studied, ' + (missed ? missed + ' moved to your Review tab.' : 'none needed another look.');
+      if (missed) row.appendChild(doneButton('Go to Review (' + review.size + ')', 'solid', function () { setMode('review'); }));
+      row.appendChild(doneButton('Study again', missed ? '' : 'solid', function () { start(); }));
     }
     d.appendChild(h); d.appendChild(p); d.appendChild(row);
   }
 
   function renderAll() {
     renderChips();
+    var inReview = prefs.mode === 'review';
+    $('tabStudy').setAttribute('aria-selected', inReview ? 'false' : 'true');
+    $('tabReview').setAttribute('aria-selected', inReview ? 'true' : 'false');
+    $('revCount').textContent = review.size;
+    $('revCount').hidden = review.size === 0;
+    $('levels').hidden = inReview;
+    $('skipWrap').hidden = inReview;
+    $('sub').textContent = inReview
+      ? 'Review: only the words you marked "Again". Get one right to clear it from this list.'
+      : CARDS.length + ' words from the HSK 2.0 lists. Progress is saved in this browser.';
     $('dirZh').setAttribute('aria-pressed', prefs.dir === 'zh' ? 'true' : 'false');
     $('dirEn').setAttribute('aria-pressed', prefs.dir === 'en' ? 'true' : 'false');
     $('skip').checked = prefs.skip;
@@ -2919,7 +2992,7 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   $('reset').addEventListener('click', function () {
     var b = $('reset');
     if (!resetTimer) {
-      b.textContent = 'Tap again to clear all known words';
+      b.textContent = 'Tap again to clear all progress';
       resetTimer = setTimeout(function () { resetTimer = null; b.textContent = 'Reset progress'; }, 4000);
       return;
     }
@@ -2927,6 +3000,7 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     resetTimer = null;
     b.textContent = 'Reset progress';
     known.clear();
+    review.clear();
     save();
     start();
   });
@@ -2941,7 +3015,9 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     else if (e.key === '2') grade(true);
   });
 
-  $('sub').textContent = CARDS.length + ' words from the HSK 2.0 lists. Progress is saved in this browser.';
+  $('tabStudy').addEventListener('click', function () { setMode('study'); });
+  $('tabReview').addEventListener('click', function () { setMode('review'); });
+
   start();
 })();
 </script>
