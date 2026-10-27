@@ -1,2 +1,2 @@
 # Welcome
-For testing on flashcard
+Another tool to learn Chinese, adding flash card from 1-5
