@@ -1,6 +1,8 @@
 # Welcome
 Another tool to learn Chinese, adding flash card from 1-5
 
+Access here: https://monikavrb.github.io/hsk-flash-cards/#/
+
 If you click the speaker button and the voice stays silent here are some steps:
 
 Windows: Settings → Time & language → Language & region → add Chinese (Simplified), and include its speech pack.
