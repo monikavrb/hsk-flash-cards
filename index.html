@@ -100,6 +100,10 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   display: grid; place-items: center; cursor: pointer; border: 0; background: transparent; color: var(--ink-2);
 }
 .speak:hover { color: var(--accent); }
+.say { display: inline-grid; place-items: center; vertical-align: middle; width: 34px; height: 34px; margin-left: 4px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; }
+.say:hover { color: var(--accent); }
+.say svg { width: 18px; height: 18px; }
+.nospeech .say { display: none; }
 .speak svg { width: 22px; height: 22px; }
 .card { perspective: 1200px; cursor: pointer; border-radius: 18px; -webkit-tap-highlight-color: transparent; }
 .card-inner { display: grid; min-height: 420px; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,.7,.2,1); }
@@ -2772,6 +2776,7 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     return out + esc(py.slice(last));
   }
   // example sentence with the study word highlighted ("..." words highlight each part)
+  var SAYBTN = '<button type="button" class="say" aria-label="Play sentence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>';
   function hiSentence(zh, hz) {
     var parts = hz.split('...').filter(Boolean), marks = [], from = 0;
     parts.forEach(function (p) {
@@ -2786,11 +2791,11 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
     return out + esc(zh.slice(last));
   }
   function exFront(c) {
-    return c.zh ? '<div class="ex">' + hiSentence(c.zh, c.hz) + '</div>' : '';
+    return c.zh ? '<div class="ex">' + hiSentence(c.zh, c.hz) + SAYBTN + '</div>' : '';
   }
   function exBack(c) {
     if (!c.zh) return '';
-    return '<div class="exbox"><div class="ex">' + hiSentence(c.zh, c.hz) + '</div>' +
+    return '<div class="exbox"><div class="ex">' + hiSentence(c.zh, c.hz) + SAYBTN + '</div>' +
       (c.spy ? '<div class="expy">' + pinyinHTML(c.spy) + '</div>' : '') +
       (c.sen ? '<div class="exen">' + esc(c.sen) + '</div>' : '') + '</div>';
   }
@@ -2995,18 +3000,29 @@ h1 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spa
   // ---------- speech ----------
   var canSpeak = false;
   try { canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function'; } catch (e) { canSpeak = false; }
-  if (canSpeak) $('speak').hidden = false;
-  $('speak').addEventListener('click', function () {
-    if (!sess || !sess.queue.length) return;
+  if (canSpeak) $('speak').hidden = false; else document.body.classList.add('nospeech');
+  function say(text, rate) {
     try {
-      var text = sess.queue[0].hz.replace(/[^一-鿿]+/g, ' ').trim();
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-CN';
-      u.rate = 0.85;
+      u.rate = rate;
       speechSynthesis.speak(u);
     } catch (e) { /* speech not available */ }
+  }
+  $('speak').addEventListener('click', function () {
+    if (!sess || !sess.queue.length) return;
+    say(sess.queue[0].hz.replace(/[^一-鿿]+/g, ' ').trim(), 0.85);
   });
+  // sentence audio: capture so tapping it doesn't flip the card
+  $('card').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.say');
+    if (!b) return;
+    e.stopPropagation();
+    if (!sess || !sess.queue.length) return;
+    var zh = sess.queue[0].zh;
+    if (zh) say(zh, 0.8);
+  }, true);
 
   // ---------- events ----------
   $('card').addEventListener('click', flip);
