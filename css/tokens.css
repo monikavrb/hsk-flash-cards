@@ -1,0 +1,35 @@
+/* Design tokens: colours, tone colours and fonts, with light and dark themes. */
+:root {
+  --bg: #ECF0ED;
+  --surface: #FAFCFA;
+  --ink: #15201C;
+  --ink-2: #53625D;
+  --line: #C7D1CC;
+  --accent: #1B6A5E;
+  --accent-ink: #FFFFFF;
+  --bad: #B03A2A;
+  --grid: #D4695A;
+  --grid-soft: #E3A79E;
+  --t1: #C0392B;
+  --t2: #B26A0A;
+  --t3: #1E7B4B;
+  --t4: #2A5DB5;
+  --t5: #6B7873;
+  --font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-py: 'Noto Sans', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-zh: 'Noto Serif SC', 'Songti SC', 'STSong', 'Source Han Serif SC', 'SimSun', serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1613; --surface: #18221E; --ink: #E7EFEB; --ink-2: #9CAAA4; --line: #2B3934;
+    --accent: #52BBA8; --accent-ink: #08120F; --bad: #FF8E7C; --grid: #B25A4E; --grid-soft: #5E3B36;
+    --t1: #FF7F70; --t2: #F2AB4A; --t3: #55CF90; --t4: #78A8FF; --t5: #9AA7A2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1613; --surface: #18221E; --ink: #E7EFEB; --ink-2: #9CAAA4; --line: #2B3934;
+  --accent: #52BBA8; --accent-ink: #08120F; --bad: #FF8E7C; --grid: #B25A4E; --grid-soft: #5E3B36;
+  --t1: #FF7F70; --t2: #F2AB4A; --t3: #55CF90; --t4: #78A8FF; --t5: #9AA7A2;
+  color-scheme: dark;
+}
